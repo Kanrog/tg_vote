@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Schedule</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .schedule-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-bottom: 30px;
+            padding: 12px 24px;
+            background: var(--primary-color);
+            color: var(--text-color);
+            text-decoration: none;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background: var(--hover-color);
+            transform: translateY(-2px);
+        }
+
+        .schedule-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .schedule-header h1 {
+            font-size: 3em;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .schedule-date {
+            font-size: 1.2em;
+            color: var(--accent-color);
+        }
+
+        .schedule-timeline {
+            position: relative;
+        }
+
+        .schedule-item {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .schedule-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 6px 12px rgba(229, 9, 20, 0.4);
+        }
+
+        .schedule-time {
+            font-size: 2em;
+            font-weight: bold;
+            color: var(--primary-color);
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .schedule-details {
+            flex: 1;
+        }
+
+        .schedule-movie-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: var(--text-color);
+            margin-bottom: 10px;
+        }
+
+        .schedule-info {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            color: #999;
+        }
+
+        .schedule-info-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .schedule-location {
+            background: var(--primary-color);
+            color: var(--text-color);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 1.2em;
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #f44336;
+            font-size: 1.2em;
+        }
+
+        .empty-schedule {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-schedule h2 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        .refresh-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--primary-color);
+            color: var(--text-color);
+            border: none;
+            padding: 15px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1em;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .refresh-button:hover {
+            background: var(--hover-color);
+            transform: scale(1.1);
+        }
+
+        @media (max-width: 768px) {
+            .schedule-header h1 {
+                font-size: 2em;
+            }
+
+            .schedule-item {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .schedule-time {
+                min-width: auto;
+            }
+
+            .schedule-info {
+                justify-content: center;
+            }
+        }
+    </style>
+<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+</head>
+<body>
+    <div class="schedule-container">
+        <a href="index.html" class="back-button">← Back to Voting</a>
+        
+        <div class="schedule-header">
+            <h1>🎬 Movie Schedule</h1>
+            <p class="schedule-date" id="scheduleDate">Loading...</p>
+        </div>
+
+        <div id="scheduleContent" class="loading">
+            Loading schedule...
+        </div>
+
+        <button class="refresh-button" onclick="loadSchedule()">🔄 Refresh</button>
+    </div>
+
+    <script>
+        // CONFIGURATION - Replace with your Google Sheet ID
+        const GOOGLE_SHEET_ID = 'YOUR_SHEET_ID_HERE';
+        const SHEET_NAME = 'Schedule'; // Name of the sheet tab
+        
+        // Auto-refresh every 30 seconds
+        let autoRefreshInterval;
+
+        // Load schedule on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSchedule();
+            startAutoRefresh();
+            updateDate();
+        });
+
+        // Update current date
+        function updateDate() {
+            const dateElement = document.getElementById('scheduleDate');
+            const today = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            dateElement.textContent = today.toLocaleDateString('en-US', options);
+        }
+
+        // Load schedule from Google Sheets
+        async function loadSchedule() {
+            const contentDiv = document.getElementById('scheduleContent');
+            contentDiv.innerHTML = '<div class="loading">Loading schedule...</div>';
+
+            try {
+                // Construct CSV export URL
+                const csvUrl = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`;
+                
+                const response = await fetch(csvUrl);
+                if (!response.ok) {
+                    throw new Error('Failed to load schedule');
+                }
+
+                const csvText = await response.text();
+                const scheduleData = parseCSV(csvText);
+                
+                if (scheduleData.length === 0) {
+                    contentDiv.innerHTML = `
+                        <div class="empty-schedule">
+                            <h2>No Movies Scheduled Yet</h2>
+                            <p>The schedule will appear here once it's been set up.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                displaySchedule(scheduleData);
+            } catch (error) {
+                console.error('Error loading schedule:', error);
+                contentDiv.innerHTML = `
+                    <div class="error">
+                        <h2>Unable to Load Schedule</h2>
+                        <p>Please check that the Google Sheet is publicly accessible.</p>
+                        <p style="font-size: 0.9em; margin-top: 10px;">Error: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Parse CSV data
+        function parseCSV(csvText) {
+            const lines = csvText.split('\n').filter(line => line.trim());
+            if (lines.length <= 1) return []; // Only header or empty
+
+            const schedule = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = parseCSVLine(lines[i]);
+                if (values.length >= 2 && values[0] && values[1]) {
+                    schedule.push({
+                        time: values[0].replace(/"/g, '').trim(),
+                        title: values[1].replace(/"/g, '').trim(),
+                        duration: values[2] ? values[2].replace(/"/g, '').trim() : '',
+                        location: values[3] ? values[3].replace(/"/g, '').trim() : ''
+                    });
+                }
+            }
+            return schedule;
+        }
+
+        // Parse a single CSV line (handles quoted commas)
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+
+            result.push(current.trim());
+            return result;
+        }
+
+        // Display schedule
+        function displaySchedule(scheduleData) {
+            const contentDiv = document.getElementById('scheduleContent');
+            
+            const html = scheduleData.map(item => `
+                <div class="schedule-item">
+                    <div class="schedule-time">${item.time}</div>
+                    <div class="schedule-details">
+                        <div class="schedule-movie-title">${item.title}</div>
+                        <div class="schedule-info">
+                            ${item.duration ? `<div class="schedule-info-item">⏱️ ${item.duration}</div>` : ''}
+                            ${item.location ? `<div class="schedule-location">${item.location}</div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            contentDiv.innerHTML = `<div class="schedule-timeline">${html}</div>`;
+        }
+
+        // Start auto-refresh
+        function startAutoRefresh() {
+            autoRefreshInterval = setInterval(() => {
+                loadSchedule();
+            }, 30000); // Refresh every 30 seconds
+        }
+
+        // Stop auto-refresh (if needed)
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+        }
+    </script>
+</body>
+</html>
