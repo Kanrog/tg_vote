@@ -522,7 +522,3 @@ footer a {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--hover-color);
 }
-.event-logo {
-    max-height: 80px;
-    margin: 10px 0;
-}
