@@ -4,37 +4,117 @@ const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
 const DEFAULT_ADMIN_PASSWORD = 'admin123';
 
+// Google Sheets Configuration
+const GOOGLE_SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbwwQT2Pa2iu4HTQ43NUcjNabiN4013HqnCiwu6To04KxZYBHsNtYuRaKDC2xiJyTOKDnA/exec';
+
 // State Management
 let movies = [];
 let adminPassword = DEFAULT_ADMIN_PASSWORD;
 let searchTimeout = null;
 let isAdminLoggedIn = false;
+let dataRefreshInterval = null;
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
-    loadData();
+    loadAdminPassword();
     initializeEventListeners();
-    renderMovies();
+    loadMovies();
+    startDataRefresh();
 });
 
-// Load data from localStorage
-function loadData() {
-    const savedMovies = localStorage.getItem('movies');
-    const savedPassword = localStorage.getItem('adminPassword');
-    
-    if (savedMovies) {
-        movies = JSON.parse(savedMovies);
-    }
-    
-    if (savedPassword) {
-        adminPassword = savedPassword;
+// Load data from Google Sheets
+async function loadMovies() {
+    try {
+        const response = await fetch(`${GOOGLE_SHEETS_API_URL}?method=GET`);
+        if (!response.ok) {
+            throw new Error('Failed to load movies');
+        }
+        movies = await response.json();
+        renderMovies();
+    } catch (error) {
+        console.error('Error loading movies:', error);
+        // Fallback to localStorage for offline use
+        const savedMovies = localStorage.getItem('movies');
+        if (savedMovies) {
+            movies = JSON.parse(savedMovies);
+            renderMovies();
+        }
     }
 }
 
-// Save data to localStorage
-function saveData() {
-    localStorage.setItem('movies', JSON.stringify(movies));
-    localStorage.setItem('adminPassword', adminPassword);
+// Save data to Google Sheets
+async function saveMovies() {
+    try {
+        // Save each movie to Google Sheets
+        for (const movie of movies) {
+            const response = await fetch(GOOGLE_SHEETS_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(movie)
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to save movie');
+            }
+        }
+        
+        // Also save to localStorage as backup
+        localStorage.setItem('movies', JSON.stringify(movies));
+        
+    } catch (error) {
+        console.error('Error saving movies:', error);
+        // Fallback to localStorage
+        localStorage.setItem('movies', JSON.stringify(movies));
+    }
+}
+
+// Save a single movie to Google Sheets
+async function saveMovie(movie) {
+    try {
+        const response = await fetch(GOOGLE_SHEETS_API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(movie)
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to save movie');
+        }
+        
+        // Refresh data after save
+        setTimeout(loadMovies, 500);
+        
+    } catch (error) {
+        console.error('Error saving movie:', error);
+        // Fallback to localStorage
+        localStorage.setItem('movies', JSON.stringify(movies));
+    }
+}
+
+// Start auto-refresh to sync data across devices
+function startDataRefresh() {
+    // Stop existing refresh if running
+    stopDataRefresh();
+    
+    // Refresh every 5 seconds, but not when modal is open
+    dataRefreshInterval = setInterval(() => {
+        const modal = document.getElementById('adminModal');
+        if (!modal.classList.contains('active')) {
+            loadMovies();
+        }
+    }, 5000);
+}
+
+// Stop auto-refresh
+function stopDataRefresh() {
+    if (dataRefreshInterval) {
+        clearInterval(dataRefreshInterval);
+        dataRefreshInterval = null;
+    }
 }
 
 // Initialize event listeners
@@ -64,6 +144,8 @@ function initializeEventListeners() {
         isAdminLoggedIn = false;
         document.getElementById('adminLogin').style.display = 'block';
         document.getElementById('adminPanel').style.display = 'none';
+        // Resume auto-refresh when modal closes
+        startDataRefresh();
     });
     
     window.addEventListener('click', (e) => {
@@ -72,6 +154,8 @@ function initializeEventListeners() {
             isAdminLoggedIn = false;
             document.getElementById('adminLogin').style.display = 'block';
             document.getElementById('adminPanel').style.display = 'none';
+            // Resume auto-refresh when modal closes
+            startDataRefresh();
         }
     });
     
@@ -189,9 +273,11 @@ async function addMovie(movieId) {
             addedAt: new Date().toISOString()
         };
         
+        // Add to local array first
         movies.push(movie);
-        saveData();
-        renderMovies();
+        
+        // Save to Google Sheets
+        await saveMovie(movie);
         
         // Clear search
         document.getElementById('searchResults').classList.remove('active');
@@ -202,16 +288,19 @@ async function addMovie(movieId) {
     } catch (error) {
         console.error('Error adding movie:', error);
         alert('Error adding movie. Please try again.');
+        // Remove from local array if save failed
+        movies = movies.filter(m => m.id !== movieId);
     }
 }
 
 // Vote for a movie
-function voteForMovie(movieId) {
+async function voteForMovie(movieId) {
     const movie = movies.find(m => m.id === movieId);
     if (movie) {
         movie.votes++;
-        saveData();
-        renderMovies();
+        
+        // Save to Google Sheets
+        await saveMovie(movie);
         
         // Animate vote button
         const voteBtn = event.target.closest('.vote-btn');
@@ -266,6 +355,8 @@ function handleAdminLogin() {
         document.getElementById('adminPanel').style.display = 'block';
         document.getElementById('adminPassword').value = '';
         renderAdminMoviesList();
+        // Refresh data when admin logs in to show current state
+        loadMovies();
     } else {
         alert('Incorrect password!');
     }
@@ -295,37 +386,76 @@ function renderAdminMoviesList() {
     `).join('');
 }
 
-// Delete a movie
-function deleteMovie(movieId) {
+// Delete a movie from Google Sheets
+async function deleteMovie(movieId) {
     if (confirm('Are you sure you want to delete this movie?')) {
-        movies = movies.filter(m => m.id !== movieId);
-        saveData();
-        renderMovies();
-        renderAdminMoviesList();
-        showNotification('Movie deleted successfully!');
-    }
-}
-
-// Reset all votes
-function resetAllVotes() {
-    if (confirm('Are you sure you want to reset all votes to 0?')) {
-        movies.forEach(movie => movie.votes = 0);
-        saveData();
-        renderMovies();
-        renderAdminMoviesList();
-        showNotification('All votes reset to 0!');
-    }
-}
-
-// Clear all movies
-function clearAllMovies() {
-    if (confirm('Are you sure you want to delete ALL movies? This cannot be undone!')) {
-        if (confirm('Really? This will delete everything!')) {
-            movies = [];
-            saveData();
+        try {
+            const response = await fetch(`${GOOGLE_SHEETS_API_URL}?method=DELETE&id=${movieId}`);
+            if (!response.ok) {
+                throw new Error('Failed to delete movie');
+            }
+            
+            // Remove from local array and refresh
+            movies = movies.filter(m => m.id !== movieId);
             renderMovies();
             renderAdminMoviesList();
-            showNotification('All movies cleared!');
+            showNotification('Movie deleted successfully!');
+            
+            // Refresh data to ensure sync
+            setTimeout(loadMovies, 500);
+        } catch (error) {
+            console.error('Error deleting movie:', error);
+            alert('Error deleting movie. Please try again.');
+        }
+    }
+}
+
+// Reset all votes in Google Sheets
+async function resetAllVotes() {
+    if (confirm('Are you sure you want to reset all votes to 0?')) {
+        try {
+            // Reset all votes locally
+            movies.forEach(movie => movie.votes = 0);
+            
+            // Save each movie to Google Sheets
+            for (const movie of movies) {
+                await saveMovie(movie);
+            }
+            
+            showNotification('All votes reset to 0!');
+            renderMovies();
+            renderAdminMoviesList();
+            
+            // Refresh data
+            setTimeout(loadMovies, 500);
+        } catch (error) {
+            console.error('Error resetting votes:', error);
+            alert('Error resetting votes. Please try again.');
+        }
+    }
+}
+
+// Clear all movies from Google Sheets
+async function clearAllMovies() {
+    if (confirm('Are you sure you want to delete ALL movies? This cannot be undone!')) {
+        if (confirm('Really? This will delete everything!')) {
+            try {
+                const response = await fetch(`${GOOGLE_SHEETS_API_URL}?method=CLEAR`);
+                if (!response.ok) {
+                    throw new Error('Failed to clear movies');
+                }
+                
+                movies = [];
+                renderMovies();
+                renderAdminMoviesList();
+                showNotification('All movies cleared!');
+                
+                // Refresh data
+                setTimeout(loadMovies, 500);
+            } catch (error) {
+                console.error('Error clearing movies:', error);
+                alert('Error clearing movies. Please try again.');
+            }
         }
     }
 }
@@ -370,7 +500,7 @@ function changePassword() {
     }
     
     adminPassword = newPassword;
-    saveData();
+    saveAdminPassword();
     document.getElementById('newPassword').value = '';
     document.getElementById('changePasswordSection').style.display = 'none';
     showNotification('Password changed successfully!');
