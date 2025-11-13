@@ -1,5 +1,5 @@
 // Configuration
-const TMDB_API_KEY = 'YOUR_API_KEY_HERE'; // User will need to replace this
+const TMDB_API_KEY = '65d522ce451d6a137a804b350eac8894'; // User will need to replace this
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
 const DEFAULT_ADMIN_PASSWORD = 'admin123';
