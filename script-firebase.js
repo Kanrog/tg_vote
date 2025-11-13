@@ -502,7 +502,7 @@ function renderMovies() {
     // Sort by votes (descending) - already sorted by Firebase query
     const sortedMovies = [...movies];
     
-    movieCount.textContent = `${movies.length} movie${movies.length !== 1 ? 's' : ''}`;
+    movieCount.textContent = `${movies.length} ${movies.length !== 1 ? 'filmer' : 'film'}`;
     
     if (sortedMovies.length === 0) {
         moviesList.innerHTML = '<p class="empty-state">Ingen filmer lagt til enda, søk etter den filmen du vil se over!</p>';
