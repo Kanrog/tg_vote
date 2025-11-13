@@ -197,7 +197,7 @@ function displaySearchResults(results) {
         const year = movie.release_date ? new Date(movie.release_date).getFullYear() : 'N/A';
         
         return `
-            <div class="search-result-item" onclick="addMovie(${movie.id})">
+            <div class="search-result-item" data-movie-id="${movie.id}">
                 <img src="${posterPath}" alt="${movie.title}">
                 <div class="search-result-info">
                     <div class="search-result-title">${movie.title}</div>
@@ -208,6 +208,14 @@ function displaySearchResults(results) {
     }).join('');
     
     resultsContainer.classList.add('active');
+    
+    // Add click listeners to search results
+    resultsContainer.querySelectorAll('.search-result-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const movieId = parseInt(item.getAttribute('data-movie-id'));
+            addMovie(movieId);
+        });
+    });
 }
 
 // Add movie to Firebase
@@ -260,7 +268,7 @@ async function addMovie(movieId) {
 }
 
 // Vote for a movie
-async function voteForMovie(movieId) {
+async function voteForMovie(movieId, buttonElement) {
     const movie = movies.find(m => m.id === movieId);
     if (movie && movie.firestoreId) {
         try {
@@ -270,12 +278,13 @@ async function voteForMovie(movieId) {
                 votes: movie.votes + 1
             });
             
-            // Animate vote button
-            const voteBtn = event.target.closest('.vote-btn');
-            voteBtn.style.transform = 'scale(1.2)';
-            setTimeout(() => {
-                voteBtn.style.transform = 'scale(1)';
-            }, 200);
+            // Animate vote button if provided
+            if (buttonElement) {
+                buttonElement.style.transform = 'scale(1.2)';
+                setTimeout(() => {
+                    buttonElement.style.transform = 'scale(1)';
+                }, 200);
+            }
         } catch (error) {
             console.error('Error voting:', error);
             alert('Error recording vote. Please try again.');
@@ -307,7 +316,7 @@ function renderMovies() {
                 <div class="movie-overview">${movie.overview}</div>
                 <div class="movie-rating">⭐ ${movie.rating}/10</div>
                 <div class="vote-section">
-                    <button class="vote-btn" onclick="voteForMovie(${movie.id})">
+                    <button class="vote-btn" data-movie-id="${movie.id}">
                         👍 Upvote
                     </button>
                     <span class="vote-count">${movie.votes} vote${movie.votes !== 1 ? 's' : ''}</span>
@@ -315,6 +324,14 @@ function renderMovies() {
             </div>
         </div>
     `).join('');
+    
+    // Add click listeners to vote buttons
+    moviesList.querySelectorAll('.vote-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const movieId = parseInt(btn.getAttribute('data-movie-id'));
+            voteForMovie(movieId, e.target);
+        });
+    });
 }
 
 // Admin login
@@ -350,10 +367,18 @@ function renderAdminMoviesList() {
                 <div class="admin-movie-votes">${movie.votes} votes</div>
             </div>
             <div class="admin-movie-actions">
-                <button onclick="deleteMovie('${movie.firestoreId}')">Delete</button>
+                <button data-firestore-id="${movie.firestoreId}">Delete</button>
             </div>
         </div>
     `).join('');
+    
+    // Add click listeners to delete buttons
+    adminMoviesList.querySelectorAll('.admin-movie-actions button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const firestoreId = btn.getAttribute('data-firestore-id');
+            deleteMovie(firestoreId);
+        });
+    });
 }
 
 // Delete a movie
