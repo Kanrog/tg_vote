@@ -22,6 +22,7 @@ let searchTimeout = null;
 let isAdminLoggedIn = false;
 let db = null;
 let unsubscribe = null;
+let userVotes = {}; // Track which movies the user has voted on
 
 // Load admin password from localStorage
 function loadAdminPassword() {
@@ -34,6 +35,30 @@ function loadAdminPassword() {
 // Save admin password to localStorage
 function saveAdminPassword() {
     localStorage.setItem('adminPassword', adminPassword);
+}
+
+// Load user votes from localStorage
+function loadUserVotes() {
+    const savedVotes = localStorage.getItem('userVotes');
+    if (savedVotes) {
+        userVotes = JSON.parse(savedVotes);
+    }
+}
+
+// Save user votes to localStorage
+function saveUserVotes() {
+    localStorage.setItem('userVotes', JSON.stringify(userVotes));
+}
+
+// Check if user has already voted on a movie
+function hasUserVoted(movieId) {
+    return userVotes[movieId] === true;
+}
+
+// Mark movie as voted
+function markAsVoted(movieId) {
+    userVotes[movieId] = true;
+    saveUserVotes();
 }
 
 // Initialize Firebase
@@ -88,6 +113,7 @@ function startRealtimeListener() {
 // Initialize app
 document.addEventListener('DOMContentLoaded', async () => {
     loadAdminPassword();
+    loadUserVotes();
     initializeEventListeners();
     await initializeFirebase();
 });
@@ -269,6 +295,12 @@ async function addMovie(movieId) {
 
 // Vote for a movie
 async function voteForMovie(movieId, buttonElement) {
+    // Check if user has already voted on this movie
+    if (hasUserVoted(movieId)) {
+        showNotification('You have already voted for this movie!');
+        return;
+    }
+    
     const movie = movies.find(m => m.id === movieId);
     if (movie && movie.firestoreId) {
         try {
@@ -278,13 +310,24 @@ async function voteForMovie(movieId, buttonElement) {
                 votes: movie.votes + 1
             });
             
-            // Animate vote button if provided
+            // Mark as voted
+            markAsVoted(movieId);
+            
+            // Update button appearance
             if (buttonElement) {
+                buttonElement.disabled = true;
+                buttonElement.textContent = '✓ Voted';
+                buttonElement.style.background = '#666';
+                buttonElement.style.cursor = 'not-allowed';
+                
+                // Animate vote button
                 buttonElement.style.transform = 'scale(1.2)';
                 setTimeout(() => {
                     buttonElement.style.transform = 'scale(1)';
                 }, 200);
             }
+            
+            showNotification('Vote recorded!');
         } catch (error) {
             console.error('Error voting:', error);
             alert('Error recording vote. Please try again.');
@@ -307,26 +350,33 @@ function renderMovies() {
         return;
     }
     
-    moviesList.innerHTML = sortedMovies.map(movie => `
-        <div class="movie-card">
-            <img src="${movie.posterPath}" alt="${movie.title}" class="movie-poster">
-            <div class="movie-info">
-                <div class="movie-title">${movie.title}</div>
-                <div class="movie-year">${movie.year}</div>
-                <div class="movie-overview">${movie.overview}</div>
-                <div class="movie-rating">⭐ ${movie.rating}/10</div>
-                <div class="vote-section">
-                    <button class="vote-btn" data-movie-id="${movie.id}">
-                        👍 Upvote
-                    </button>
-                    <span class="vote-count">${movie.votes} vote${movie.votes !== 1 ? 's' : ''}</span>
+    moviesList.innerHTML = sortedMovies.map(movie => {
+        const hasVoted = hasUserVoted(movie.id);
+        const buttonText = hasVoted ? '✓ Voted' : '👍 Upvote';
+        const buttonStyle = hasVoted ? 'background: #666; cursor: not-allowed;' : '';
+        const buttonDisabled = hasVoted ? 'disabled' : '';
+        
+        return `
+            <div class="movie-card">
+                <img src="${movie.posterPath}" alt="${movie.title}" class="movie-poster">
+                <div class="movie-info">
+                    <div class="movie-title">${movie.title}</div>
+                    <div class="movie-year">${movie.year}</div>
+                    <div class="movie-overview">${movie.overview}</div>
+                    <div class="movie-rating">⭐ ${movie.rating}/10</div>
+                    <div class="vote-section">
+                        <button class="vote-btn" data-movie-id="${movie.id}" ${buttonDisabled} style="${buttonStyle}">
+                            ${buttonText}
+                        </button>
+                        <span class="vote-count">${movie.votes} vote${movie.votes !== 1 ? 's' : ''}</span>
+                    </div>
                 </div>
             </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
     
-    // Add click listeners to vote buttons
-    moviesList.querySelectorAll('.vote-btn').forEach(btn => {
+    // Add click listeners to vote buttons (only for non-disabled buttons)
+    moviesList.querySelectorAll('.vote-btn:not([disabled])').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const movieId = parseInt(btn.getAttribute('data-movie-id'));
             voteForMovie(movieId, e.target);
@@ -397,7 +447,7 @@ async function deleteMovie(firestoreId) {
 
 // Reset all votes
 async function resetAllVotes() {
-    if (confirm('Are you sure you want to reset all votes to 0?')) {
+    if (confirm('Are you sure you want to reset all votes to 0? This will also clear all users\' vote history.')) {
         try {
             const { doc, updateDoc } = window.firestoreFunctions;
             
@@ -407,6 +457,10 @@ async function resetAllVotes() {
                     await updateDoc(movieRef, { votes: 0 });
                 }
             }
+            
+            // Clear user votes from localStorage
+            userVotes = {};
+            saveUserVotes();
             
             showNotification('All votes reset to 0!');
         } catch (error) {
