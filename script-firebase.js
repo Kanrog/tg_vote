@@ -204,6 +204,7 @@ function initializeEventListeners() {
     });
     document.getElementById('savePasswordBtn').addEventListener('click', changePassword);
 }
+
 // Export to Google Sheets
 function exportToGoogleSheets() {
     if (movies.length === 0) {
@@ -213,11 +214,11 @@ function exportToGoogleSheets() {
     
     const sortedMovies = [...movies];
     
-    // Create CSV content
-    let csv = 'Rank,Title,Year,Votes,Rating,Overview\n';
+    // Create TSV content (tab-separated for Google Sheets paste)
+    let tsv = 'Rank\tTitle\tYear\tVotes\tRating\tOverview\n';
     sortedMovies.forEach((movie, index) => {
-        const overview = movie.overview.replace(/"/g, '""').replace(/\n/g, ' ');
-        csv += `${index + 1},"${movie.title}",${movie.year},${movie.votes},${movie.rating},"${overview}"\n`;
+        const overview = movie.overview.replace(/\t/g, ' ').replace(/\n/g, ' ');
+        tsv += `${index + 1}\t${movie.title}\t${movie.year}\t${movie.votes}\t${movie.rating}\t${overview}\n`;
     });
     
     // Open in new tab with instructions
@@ -286,7 +287,7 @@ function exportToGoogleSheets() {
                 
                 <div class="step">
                     <h3>Step 1: Copy the data below</h3>
-                    <textarea id="csvData" readonly>${csv}</textarea>
+                    <textarea id="tsvData" readonly>${tsv}</textarea>
                     <button onclick="copyData()">📋 Copy Data</button>
                     <span id="copyStatus" style="color: green; margin-left: 10px;"></span>
                 </div>
@@ -311,7 +312,7 @@ function exportToGoogleSheets() {
             
             <script>
                 function copyData() {
-                    const textarea = document.getElementById('csvData');
+                    const textarea = document.getElementById('tsvData');
                     textarea.select();
                     document.execCommand('copy');
                     document.getElementById('copyStatus').textContent = '✓ Copied!';
