@@ -14,6 +14,19 @@ let searchTimeout = null;
 let isAdminLoggedIn = false;
 let dataRefreshInterval = null;
 
+// Load admin password from localStorage
+function loadAdminPassword() {
+    const savedPassword = localStorage.getItem('adminPassword');
+    if (savedPassword) {
+        adminPassword = savedPassword;
+    }
+}
+
+// Save admin password to localStorage
+function saveAdminPassword() {
+    localStorage.setItem('adminPassword', adminPassword);
+}
+
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
     loadAdminPassword();
