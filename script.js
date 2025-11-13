@@ -5,7 +5,7 @@ const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
 const DEFAULT_ADMIN_PASSWORD = 'admin123';
 
 // Google Sheets Configuration
-const GOOGLE_SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbwwQT2Pa2iu4HTQ43NUcjNabiN4013HqnCiwu6To04KxZYBHsNtYuRaKDC2xiJyTOKDnA/exec';
+const GOOGLE_SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbx0bMoYaAg24YJUFujPjZoSNZReqn4v_NZDVnTQsl60/dev';
 
 // State Management
 let movies = [];
