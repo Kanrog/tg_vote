@@ -1,8 +1,8 @@
 // Configuration
-let TMDB_API_KEY = 'YOUR_API_KEY_HERE';
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
-let DEFAULT_ADMIN_PASSWORD = 'admin123';
+let TMDB_API_KEY = window.CONFIG ? window.CONFIG.tmdbApiKey : 'YOUR_API_KEY_HERE';
+let DEFAULT_ADMIN_PASSWORD = window.CONFIG ? window.CONFIG.adminPassword : 'admin123';
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -27,10 +27,10 @@ let userId = null; // Unique user identifier
 
 // Load admin password from localStorage
 function loadAdminPassword() {
-    // First try to get from config
-    adminPassword = window.configLoader ? window.configLoader.getAdminPassword() : DEFAULT_ADMIN_PASSWORD;
+    // Get from CONFIG object
+    adminPassword = DEFAULT_ADMIN_PASSWORD;
     
-    // Then check if user has changed it locally
+    // Check if user has changed it locally
     const savedPassword = localStorage.getItem('adminPassword');
     if (savedPassword) {
         adminPassword = savedPassword;
@@ -148,11 +148,6 @@ function startRealtimeListener() {
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', async () => {
-    // Load configuration first
-    if (window.configLoader) {
-        await window.configLoader.loadConfig();
-    }
-    
     loadAdminPassword();
     initializeEventListeners();
     await initializeFirebase();
@@ -355,10 +350,8 @@ async function handleSearch(e) {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(async () => {
         try {
-              // Get API key from config
-            const apiKey = window.configLoader ? window.configLoader.getTmdbApiKey() : TMDB_API_KEY;
             const response = await fetch(
-                `${TMDB_BASE_URL}/search/movie?api_key=${apiKey}&query=${encodeURIComponent(query)}&language=en-US&page=1`
+                `${TMDB_BASE_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=en-US&page=1`
             );
            
             if (!response.ok) {
@@ -425,10 +418,9 @@ async function addMovie(movieId) {
     }
     
     try {
-              // Get API key from config
-        const apiKey = window.configLoader ? window.configLoader.getTmdbApiKey() : TMDB_API_KEY;
+    try {
         const response = await fetch(
-            `${TMDB_BASE_URL}/movie/${movieId}?api_key=${apiKey}&language=en-US`
+            `${TMDB_BASE_URL}/movie/${movieId}?api_key=${TMDB_API_KEY}&language=en-US`
         );
         
         if (!response.ok) {
