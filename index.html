@@ -10,26 +10,27 @@
 <body>
     <div class="container">
         <header>
-            <h1>🎬 Cinema Movie Voting</h1>
-            <p class="subtitle">Vote for the movies you want to see!</p>
-            <button id="adminBtn" class="admin-btn">Admin Panel</button>
+            <h1>🎬 TG26 Frivilligpleie Kino</h1>
+            <img src="TGlogo-300x300.png" alt="TG-Logo" class="event-logo">
+            <p class="subtitle">Stem på hvilken film du vil se!</p>
+            <button id="adminBtn" class="admin-btn">Administrator</button>
         </header>
 
         <div class="search-section">
-            <h2>Suggest a Movie</h2>
+            <h2>Søk etter film</h2>
             <div class="search-container">
-                <input type="text" id="movieSearch" placeholder="Search for a movie..." autocomplete="off">
+                <input type="text" id="movieSearch" placeholder="Søk..." autocomplete="off">
                 <div id="searchResults" class="search-results"></div>
             </div>
         </div>
 
         <div class="movies-section">
             <div class="section-header">
-                <h2>Movies to Vote On</h2>
+                <h2>Stem på dine favoritter</h2>
                 <span id="movieCount" class="movie-count">0 movies</span>
             </div>
             <div id="moviesList" class="movies-list">
-                <p class="empty-state">No movies added yet. Be the first to suggest one!</p>
+                <p class="empty-state">Ingen filmer lagt til enda, søk etter den filmen du vil se over!</p>
             </div>
         </div>
 
