@@ -500,7 +500,7 @@ function renderMovies() {
     const movieCount = document.getElementById('movieCount');
     
     // Sort by votes (descending) - already sorted by Firebase query
-    const sortedMovies = [...movies];
+    const sortedMovies = [...filmer];
     
     movieCount.textContent = `${movies.length} movie${movies.length !== 1 ? 's' : ''}`;
     
