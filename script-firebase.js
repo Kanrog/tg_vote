@@ -445,10 +445,10 @@ async function addMovie(movieId) {
         document.getElementById('searchResults').classList.remove('active');
         document.getElementById('movieSearch').value = '';
         
-        showNotification(`"${movie.title}" added successfully!`);
+        showNotification(`"${movie.title}" lagt til!`);
     } catch (error) {
         console.error('Error adding movie:', error);
-        alert('Error adding movie. Please try again.');
+        alert('En feil oppstod, prøv igjen.');
     }
 }
 
@@ -456,7 +456,7 @@ async function addMovie(movieId) {
 async function voteForMovie(movieId, buttonElement) {
     // Check if user has already voted on this movie
     if (hasUserVoted(movieId)) {
-        showNotification('You have already voted for this movie!');
+        showNotification('Du har allerede stemp på denne filmen!');
         return;
     }
     
@@ -486,10 +486,10 @@ async function voteForMovie(movieId, buttonElement) {
                 }, 200);
             }
             
-            showNotification('Vote recorded!');
+            showNotification('Stemme registrert!');
         } catch (error) {
             console.error('Error voting:', error);
-            alert('Error recording vote. Please try again.');
+            alert('En feil oppstod, prøv igjen.');
         }
     }
 }
