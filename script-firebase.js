@@ -23,6 +23,7 @@ let isAdminLoggedIn = false;
 let db = null;
 let unsubscribe = null;
 let userVotes = {}; // Track which movies the user has voted on
+let userId = null; // Unique user identifier
 
 // Load admin password from localStorage
 function loadAdminPassword() {
@@ -37,17 +38,33 @@ function saveAdminPassword() {
     localStorage.setItem('adminPassword', adminPassword);
 }
 
-// Load user votes from localStorage
-function loadUserVotes() {
-    const savedVotes = localStorage.getItem('userVotes');
-    if (savedVotes) {
-        userVotes = JSON.parse(savedVotes);
+// Generate or retrieve unique user ID
+function getUserId() {
+    let id = localStorage.getItem('userId');
+    if (!id) {
+        // Generate a unique ID based on browser fingerprint
+        id = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('userId', id);
     }
+    return id;
 }
 
-// Save user votes to localStorage
-function saveUserVotes() {
-    localStorage.setItem('userVotes', JSON.stringify(userVotes));
+// Load user votes from Firebase
+async function loadUserVotes() {
+    try {
+        const { collection, query, where, getDocs } = window.firestoreFunctions;
+        const votesRef = collection(db, 'votes');
+        const q = query(votesRef, where('userId', '==', userId));
+        const snapshot = await getDocs(q);
+        
+        userVotes = {};
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            userVotes[data.movieId] = true;
+        });
+    } catch (error) {
+        console.error('Error loading user votes:', error);
+    }
 }
 
 // Check if user has already voted on a movie
@@ -55,10 +72,19 @@ function hasUserVoted(movieId) {
     return userVotes[movieId] === true;
 }
 
-// Mark movie as voted
-function markAsVoted(movieId) {
-    userVotes[movieId] = true;
-    saveUserVotes();
+// Mark movie as voted in Firebase
+async function markAsVoted(movieId) {
+    try {
+        const { collection, addDoc } = window.firestoreFunctions;
+        await addDoc(collection(db, 'votes'), {
+            userId: userId,
+            movieId: movieId,
+            timestamp: new Date().toISOString()
+        });
+        userVotes[movieId] = true;
+    } catch (error) {
+        console.error('Error marking as voted:', error);
+    }
 }
 
 // Initialize Firebase
@@ -66,16 +92,22 @@ async function initializeFirebase() {
     try {
         // Import Firebase modules from CDN
         const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
-        const { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, where } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
         
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         db = getFirestore(app);
         
         // Store Firestore functions globally for easy access
-        window.firestoreFunctions = { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy };
+        window.firestoreFunctions = { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, where };
         
         console.log('Firebase initialized successfully');
+        
+        // Get or create user ID
+        userId = getUserId();
+        
+        // Load user's votes from Firebase
+        await loadUserVotes();
         
         // Start listening to real-time updates
         startRealtimeListener();
@@ -113,7 +145,6 @@ function startRealtimeListener() {
 // Initialize app
 document.addEventListener('DOMContentLoaded', async () => {
     loadAdminPassword();
-    loadUserVotes();
     initializeEventListeners();
     await initializeFirebase();
 });
@@ -449,8 +480,9 @@ async function deleteMovie(firestoreId) {
 async function resetAllVotes() {
     if (confirm('Are you sure you want to reset all votes to 0? This will also clear all users\' vote history.')) {
         try {
-            const { doc, updateDoc } = window.firestoreFunctions;
+            const { doc, updateDoc, collection, getDocs, deleteDoc } = window.firestoreFunctions;
             
+            // Reset movie vote counts
             for (const movie of movies) {
                 if (movie.firestoreId) {
                     const movieRef = doc(db, 'movies', movie.firestoreId);
@@ -458,9 +490,17 @@ async function resetAllVotes() {
                 }
             }
             
-            // Clear user votes from localStorage
+            // Delete all vote records from Firebase
+            const votesRef = collection(db, 'votes');
+            const snapshot = await getDocs(votesRef);
+            const deletePromises = [];
+            snapshot.forEach((docSnapshot) => {
+                deletePromises.push(deleteDoc(doc(db, 'votes', docSnapshot.id)));
+            });
+            await Promise.all(deletePromises);
+            
+            // Clear local user votes
             userVotes = {};
-            saveUserVotes();
             
             showNotification('All votes reset to 0!');
         } catch (error) {
@@ -473,17 +513,30 @@ async function resetAllVotes() {
 // Clear all movies
 async function clearAllMovies() {
     if (confirm('Are you sure you want to delete ALL movies? This cannot be undone!')) {
-        if (confirm('Really? This will delete everything!')) {
+        if (confirm('Really? This will delete everything including all votes!')) {
             try {
-                const { doc, deleteDoc } = window.firestoreFunctions;
+                const { doc, deleteDoc, collection, getDocs } = window.firestoreFunctions;
                 
+                // Delete all movies
                 for (const movie of movies) {
                     if (movie.firestoreId) {
                         await deleteDoc(doc(db, 'movies', movie.firestoreId));
                     }
                 }
                 
-                showNotification('All movies cleared!');
+                // Delete all vote records
+                const votesRef = collection(db, 'votes');
+                const snapshot = await getDocs(votesRef);
+                const deletePromises = [];
+                snapshot.forEach((docSnapshot) => {
+                    deletePromises.push(deleteDoc(doc(db, 'votes', docSnapshot.id)));
+                });
+                await Promise.all(deletePromises);
+                
+                // Clear local user votes
+                userVotes = {};
+                
+                showNotification('All movies and votes cleared!');
             } catch (error) {
                 console.error('Error clearing movies:', error);
                 alert('Error clearing movies. Please try again.');
