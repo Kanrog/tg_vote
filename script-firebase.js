@@ -505,13 +505,13 @@ function renderMovies() {
     movieCount.textContent = `${movies.length} movie${movies.length !== 1 ? 's' : ''}`;
     
     if (sortedMovies.length === 0) {
-        moviesList.innerHTML = '<p class="empty-state">No movies added yet. Be the first to suggest one!</p>';
+        moviesList.innerHTML = '<p class="empty-state">Ingen filmer lagt til enda, søk etter den filmen du vil se over!</p>';
         return;
     }
     
     moviesList.innerHTML = sortedMovies.map(movie => {
         const hasVoted = hasUserVoted(movie.id);
-        const buttonText = hasVoted ? '✓ Voted' : '👍 Upvote';
+        const buttonText = hasVoted ? '✓ Stemt' : '👍 Stem Opp';
         const buttonStyle = hasVoted ? 'background: #666; cursor: not-allowed;' : '';
         const buttonDisabled = hasVoted ? 'disabled' : '';
         
