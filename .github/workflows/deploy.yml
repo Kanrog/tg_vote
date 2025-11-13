@@ -1,0 +1,44 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      run: npm install
+      
+    - name: Create config.js from secrets
+      run: |
+        echo 'window.CONFIG = {' > config.js
+        echo '  adminPassword: "${{ secrets.ADMIN_PASSWORD }}",' >> config.js
+        echo '  tmdbApiKey: "${{ secrets.TMDB_API_KEY }}"' >> config.js
+        echo '};' >> config.js
+        
+    - name: Build
+      run: |
+        mkdir -p dist
+        cp index.html dist/
+        cp styles.css dist/
+        cp script-firebase.js dist/
+        cp config.js dist/
+        cp schedule-simple.html dist/
+        
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./dist
