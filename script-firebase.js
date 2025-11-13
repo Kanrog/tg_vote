@@ -197,11 +197,138 @@ function initializeEventListeners() {
     document.getElementById('resetVotesBtn').addEventListener('click', resetAllVotes);
     document.getElementById('clearAllBtn').addEventListener('click', clearAllMovies);
     document.getElementById('exportBtn').addEventListener('click', exportToCSV);
+    document.getElementById('exportSheetsBtn').addEventListener('click', exportToGoogleSheets);
     document.getElementById('changePasswordBtn').addEventListener('click', () => {
         const section = document.getElementById('changePasswordSection');
         section.style.display = section.style.display === 'none' ? 'block' : 'none';
     });
     document.getElementById('savePasswordBtn').addEventListener('click', changePassword);
+}
+// Export to Google Sheets
+function exportToGoogleSheets() {
+    if (movies.length === 0) {
+        alert('No movies to export!');
+        return;
+    }
+    
+    const sortedMovies = [...movies];
+    
+    // Create CSV content
+    let csv = 'Rank,Title,Year,Votes,Rating,Overview\n';
+    sortedMovies.forEach((movie, index) => {
+        const overview = movie.overview.replace(/"/g, '""').replace(/\n/g, ' ');
+        csv += `${index + 1},"${movie.title}",${movie.year},${movie.votes},${movie.rating},"${overview}"\n`;
+    });
+    
+    // Open in new tab with instructions
+    const newWindow = window.open('', '_blank');
+    newWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Export to Google Sheets</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    max-width: 800px;
+                    margin: 50px auto;
+                    padding: 20px;
+                    background: #f5f5f5;
+                }
+                .container {
+                    background: white;
+                    padding: 30px;
+                    border-radius: 10px;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                }
+                h1 {
+                    color: #e50914;
+                }
+                .step {
+                    margin: 20px 0;
+                    padding: 15px;
+                    background: #f9f9f9;
+                    border-left: 4px solid #e50914;
+                }
+                button {
+                    background: #e50914;
+                    color: white;
+                    border: none;
+                    padding: 15px 30px;
+                    font-size: 16px;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    margin: 10px 5px;
+                }
+                button:hover {
+                    background: #b20710;
+                }
+                .secondary {
+                    background: #666;
+                }
+                .secondary:hover {
+                    background: #444;
+                }
+                textarea {
+                    width: 100%;
+                    height: 150px;
+                    padding: 10px;
+                    border: 1px solid #ddd;
+                    border-radius: 5px;
+                    font-family: monospace;
+                    font-size: 12px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>📊 Export to Google Sheets</h1>
+                
+                <div class="step">
+                    <h3>Step 1: Copy the data below</h3>
+                    <textarea id="csvData" readonly>${csv}</textarea>
+                    <button onclick="copyData()">📋 Copy Data</button>
+                    <span id="copyStatus" style="color: green; margin-left: 10px;"></span>
+                </div>
+                
+                <div class="step">
+                    <h3>Step 2: Open Google Sheets</h3>
+                    <button onclick="openSheets()">🚀 Open Google Sheets</button>
+                </div>
+                
+                <div class="step">
+                    <h3>Step 3: Paste the data</h3>
+                    <p>In the new Google Sheet:</p>
+                    <ol>
+                        <li>Click on cell <strong>A1</strong></li>
+                        <li>Press <strong>Ctrl+V</strong> (or Cmd+V on Mac) to paste</li>
+                        <li>The data will automatically format into columns</li>
+                    </ol>
+                </div>
+                
+                <button class="secondary" onclick="window.close()">✓ Done</button>
+            </div>
+            
+            <script>
+                function copyData() {
+                    const textarea = document.getElementById('csvData');
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.getElementById('copyStatus').textContent = '✓ Copied!';
+                    setTimeout(() => {
+                        document.getElementById('copyStatus').textContent = '';
+                    }, 2000);
+                }
+                
+                function openSheets() {
+                    window.open('https://sheets.new', '_blank');
+                }
+            </script>
+        </body>
+        </html>
+    `);
+    
+    showNotification('Opening Google Sheets export...');
 }
 
 // Handle movie search
