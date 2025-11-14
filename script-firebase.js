@@ -336,7 +336,7 @@ async function addMovie(movieId) {
         document.getElementById('searchResults').classList.remove('active');
         document.getElementById('movieSearch').value = '';
         
-        showNotification(`"${movie.title}" added successfully!`);
+        showNotification(`"${movie.title}" lagt til!`);
     } catch (error) {
         console.error('Error adding movie:', error);
         alert('Noe gikk feil, prøv igjen.');
