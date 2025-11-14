@@ -339,7 +339,7 @@ async function addMovie(movieId) {
         showNotification(`"${movie.title}" added successfully!`);
     } catch (error) {
         console.error('Error adding movie:', error);
-        alert('Error adding movie. Please try again.');
+        alert('Noe gikk feil, prøv igjen.');
     }
 }
 
@@ -347,7 +347,7 @@ async function addMovie(movieId) {
 async function voteForMovie(movieId, buttonElement) {
     // Check if user has already voted on this movie
     if (hasUserVoted(movieId)) {
-        showNotification('You have already voted for this movie!');
+        showNotification('Du har allerede stemt på denne filmen!');
         return;
     }
     
@@ -377,7 +377,7 @@ async function voteForMovie(movieId, buttonElement) {
                 }, 200);
             }
             
-            showNotification('Vote recorded!');
+            showNotification('Stemme registrert!');
         } catch (error) {
             console.error('Error voting:', error);
             alert('Error recording vote. Please try again.');
@@ -396,13 +396,13 @@ function renderMovies() {
     movieCount.textContent = `${movies.length} movie${movies.length !== 1 ? 's' : ''}`;
     
     if (sortedMovies.length === 0) {
-        moviesList.innerHTML = '<p class="empty-state">No movies added yet. Be the first to suggest one!</p>';
+        moviesList.innerHTML = '<p class="empty-state">Ingen filmer er lagt til enda, legg til en film for å stemme!</p>';
         return;
     }
     
     moviesList.innerHTML = sortedMovies.map(movie => {
         const hasVoted = hasUserVoted(movie.id);
-        const buttonText = hasVoted ? '✓ Voted' : '👍 Upvote';
+        const buttonText = hasVoted ? '✓ Stemt' : '👍 Stem opp';
         const buttonStyle = hasVoted ? 'background: #666; cursor: not-allowed;' : '';
         const buttonDisabled = hasVoted ? 'disabled' : '';
         
