@@ -1,8 +1,8 @@
 // Configuration
+const TMDB_API_KEY = '65d522ce451d6a137a804b350eac8894';
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
-const TMDB_API_KEY = '65d522ce451d6a137a804b350eac8894';
-const DEFAULT_ADMIN_PASSWORD = 'admin123';
+const DEFAULT_ADMIN_PASSWORD = '1234qwer';
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -22,15 +22,12 @@ let searchTimeout = null;
 let isAdminLoggedIn = false;
 let db = null;
 let unsubscribe = null;
-let userVotes = {}; // Track which movies the user has voted on
-let userId = null; // Unique user identifier
+let userVotes = {};
+let userId = null;
 
 // Load admin password from localStorage
 function loadAdminPassword() {
-    // Get from CONFIG object
     adminPassword = DEFAULT_ADMIN_PASSWORD;
-    
-    // Check if user has changed it locally
     const savedPassword = localStorage.getItem('adminPassword');
     if (savedPassword) {
         adminPassword = savedPassword;
@@ -46,7 +43,6 @@ function saveAdminPassword() {
 function getUserId() {
     let id = localStorage.getItem('userId');
     if (!id) {
-        // Generate a unique ID based on browser fingerprint
         id = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         localStorage.setItem('userId', id);
     }
@@ -94,26 +90,18 @@ async function markAsVoted(movieId) {
 // Initialize Firebase
 async function initializeFirebase() {
     try {
-        // Import Firebase modules from CDN
         const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
         const { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, where } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
         
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         db = getFirestore(app);
         
-        // Store Firestore functions globally for easy access
         window.firestoreFunctions = { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, where };
         
         console.log('Firebase initialized successfully');
         
-        // Get or create user ID
         userId = getUserId();
-        
-        // Load user's votes from Firebase
         await loadUserVotes();
-        
-        // Start listening to real-time updates
         startRealtimeListener();
         
     } catch (error) {
@@ -155,18 +143,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Initialize event listeners
 function initializeEventListeners() {
-    // Movie search
     const searchInput = document.getElementById('movieSearch');
     searchInput.addEventListener('input', handleSearch);
     
-    // Close search results when clicking outside
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.search-container')) {
             document.getElementById('searchResults').classList.remove('active');
         }
     });
     
-    // Admin modal
     const adminBtn = document.getElementById('adminBtn');
     const modal = document.getElementById('adminModal');
     const closeBtn = document.querySelector('.close');
@@ -191,13 +176,11 @@ function initializeEventListeners() {
         }
     });
     
-    // Admin login
     document.getElementById('loginBtn').addEventListener('click', handleAdminLogin);
     document.getElementById('adminPassword').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') handleAdminLogin();
     });
     
-    // Admin actions
     document.getElementById('resetVotesBtn').addEventListener('click', resetAllVotes);
     document.getElementById('clearAllBtn').addEventListener('click', clearAllMovies);
     document.getElementById('exportBtn').addEventListener('click', exportToCSV);
@@ -226,7 +209,6 @@ function exportToGoogleSheets() {
         tsv += `${index + 1}\t${movie.title}\t${movie.year}\t${movie.votes}\t${duration}\t${tmdbLink}\n`;
     });
     
-    // Open in new tab with instructions
     const newWindow = window.open('', '_blank');
     newWindow.document.write(`
         <!DOCTYPE html>
@@ -347,14 +329,13 @@ async function handleSearch(e) {
         return;
     }
     
-    // Debounce search
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(async () => {
         try {
             const response = await fetch(
                 `${TMDB_BASE_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=en-US&page=1`
             );
-           
+            
             if (!response.ok) {
                 throw new Error('Failed to fetch movies');
             }
@@ -399,7 +380,6 @@ function displaySearchResults(results) {
     
     resultsContainer.classList.add('active');
     
-    // Add click listeners to search results
     resultsContainer.querySelectorAll('.search-result-item').forEach(item => {
         item.addEventListener('click', () => {
             const movieId = parseInt(item.getAttribute('data-movie-id'));
@@ -410,7 +390,6 @@ function displaySearchResults(results) {
 
 // Add movie to Firebase
 async function addMovie(movieId) {
-    // Check if movie already exists
     if (movies.some(m => m.id === movieId)) {
         alert('This movie is already in the voting list!');
         document.getElementById('searchResults').classList.remove('active');
@@ -418,7 +397,6 @@ async function addMovie(movieId) {
         return;
     }
     
-    try {
     try {
         const response = await fetch(
             `${TMDB_BASE_URL}/movie/${movieId}?api_key=${TMDB_API_KEY}&language=en-US`
@@ -443,12 +421,10 @@ async function addMovie(movieId) {
             votes: 0,
             addedAt: new Date().toISOString()
         };
-
-        // Add to Firebase
+        
         const { collection, addDoc } = window.firestoreFunctions;
         await addDoc(collection(db, 'movies'), movie);
         
-        // Clear search
         document.getElementById('searchResults').classList.remove('active');
         document.getElementById('movieSearch').value = '';
         
@@ -461,9 +437,8 @@ async function addMovie(movieId) {
 
 // Vote for a movie
 async function voteForMovie(movieId, buttonElement) {
-    // Check if user has already voted on this movie
     if (hasUserVoted(movieId)) {
-        showNotification('Du har allerede stemp på denne filmen!');
+        showNotification('Du har allerede stemt på denne filmen!');
         return;
     }
     
@@ -476,17 +451,14 @@ async function voteForMovie(movieId, buttonElement) {
                 votes: movie.votes + 1
             });
             
-            // Mark as voted
             markAsVoted(movieId);
             
-            // Update button appearance
             if (buttonElement) {
                 buttonElement.disabled = true;
-                buttonElement.textContent = '✓ Voted';
+                buttonElement.textContent = '✓ Stemt';
                 buttonElement.style.background = '#666';
                 buttonElement.style.cursor = 'not-allowed';
                 
-                // Animate vote button
                 buttonElement.style.transform = 'scale(1.2)';
                 setTimeout(() => {
                     buttonElement.style.transform = 'scale(1)';
@@ -506,7 +478,6 @@ function renderMovies() {
     const moviesList = document.getElementById('moviesList');
     const movieCount = document.getElementById('movieCount');
     
-    // Sort by votes (descending) - already sorted by Firebase query
     const sortedMovies = [...movies];
     
     movieCount.textContent = `${movies.length} ${movies.length !== 1 ? 'filmer' : 'film'}`;
@@ -541,7 +512,6 @@ function renderMovies() {
         `;
     }).join('');
     
-    // Add click listeners to vote buttons (only for non-disabled buttons)
     moviesList.querySelectorAll('.vote-btn:not([disabled])').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const movieId = parseInt(btn.getAttribute('data-movie-id'));
@@ -588,7 +558,6 @@ function renderAdminMoviesList() {
         </div>
     `).join('');
     
-    // Add click listeners to delete buttons
     adminMoviesList.querySelectorAll('.admin-movie-actions button').forEach(btn => {
         btn.addEventListener('click', () => {
             const firestoreId = btn.getAttribute('data-firestore-id');
@@ -617,7 +586,6 @@ async function resetAllVotes() {
         try {
             const { doc, updateDoc, collection, getDocs, deleteDoc } = window.firestoreFunctions;
             
-            // Reset movie vote counts
             for (const movie of movies) {
                 if (movie.firestoreId) {
                     const movieRef = doc(db, 'movies', movie.firestoreId);
@@ -625,7 +593,6 @@ async function resetAllVotes() {
                 }
             }
             
-            // Delete all vote records from Firebase
             const votesRef = collection(db, 'votes');
             const snapshot = await getDocs(votesRef);
             const deletePromises = [];
@@ -634,7 +601,6 @@ async function resetAllVotes() {
             });
             await Promise.all(deletePromises);
             
-            // Clear local user votes
             userVotes = {};
             
             showNotification('All votes reset to 0!');
@@ -652,14 +618,12 @@ async function clearAllMovies() {
             try {
                 const { doc, deleteDoc, collection, getDocs } = window.firestoreFunctions;
                 
-                // Delete all movies
                 for (const movie of movies) {
                     if (movie.firestoreId) {
                         await deleteDoc(doc(db, 'movies', movie.firestoreId));
                     }
                 }
                 
-                // Delete all vote records
                 const votesRef = collection(db, 'votes');
                 const snapshot = await getDocs(votesRef);
                 const deletePromises = [];
@@ -668,7 +632,6 @@ async function clearAllMovies() {
                 });
                 await Promise.all(deletePromises);
                 
-                // Clear local user votes
                 userVotes = {};
                 
                 showNotification('All movies and votes cleared!');
@@ -689,14 +652,12 @@ function exportToCSV() {
     
     const sortedMovies = [...movies];
     
-    // Create CSV content
     let csv = 'Rank,Title,Year,Votes,Rating,Overview\n';
     sortedMovies.forEach((movie, index) => {
         const overview = movie.overview.replace(/"/g, '""');
         csv += `${index + 1},"${movie.title}",${movie.year},${movie.votes},${movie.rating},"${overview}"\n`;
     });
     
-    // Create download link
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -753,7 +714,6 @@ function showNotification(message) {
     }, 3000);
 }
 
-// Add animation styles
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideIn {
