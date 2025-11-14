@@ -14,7 +14,7 @@ const firebaseConfig = {
 };
 
 // Get config from external file
-let TMDB_API_KEY = '65d522ce451d6a137a804b350eac8894';
+let TMDB_API_KEY = 'YOUR_API_KEY_HERE';
 let DEFAULT_ADMIN_PASSWORD = '1234qwer';
 
 // State Management
