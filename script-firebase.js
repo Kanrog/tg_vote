@@ -443,7 +443,7 @@ async function addMovie(movieId) {
             votes: 0,
             addedAt: new Date().toISOString()
         };
-        
+
         // Add to Firebase
         const { collection, addDoc } = window.firestoreFunctions;
         await addDoc(collection(db, 'movies'), movie);
