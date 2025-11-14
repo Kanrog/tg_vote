@@ -1,8 +1,6 @@
-// Configuration
-const TMDB_API_KEY = '65d522ce451d6a137a804b350eac8894';
+// Configuration (loaded from external config file)
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
-const DEFAULT_ADMIN_PASSWORD = '1234qwer';
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -15,6 +13,10 @@ const firebaseConfig = {
   measurementId: "G-BL2N03211Z"
 };
 
+// Get config from external file
+let TMDB_API_KEY = '65d522ce451d6a137a804b350eac8894';
+let DEFAULT_ADMIN_PASSWORD = '1234qwer';
+
 // State Management
 let movies = [];
 let adminPassword = DEFAULT_ADMIN_PASSWORD;
@@ -22,12 +24,15 @@ let searchTimeout = null;
 let isAdminLoggedIn = false;
 let db = null;
 let unsubscribe = null;
-let userVotes = {};
-let userId = null;
+let userVotes = {}; // Track which movies the user has voted on
+let userId = null; // Unique user identifier
 
 // Load admin password from localStorage
 function loadAdminPassword() {
-    adminPassword = DEFAULT_ADMIN_PASSWORD;
+    // First try to get from config
+    adminPassword = window.configLoader ? window.configLoader.getAdminPassword() : DEFAULT_ADMIN_PASSWORD;
+    
+    // Then check if user has changed it locally
     const savedPassword = localStorage.getItem('adminPassword');
     if (savedPassword) {
         adminPassword = savedPassword;
@@ -43,6 +48,7 @@ function saveAdminPassword() {
 function getUserId() {
     let id = localStorage.getItem('userId');
     if (!id) {
+        // Generate a unique ID based on browser fingerprint
         id = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         localStorage.setItem('userId', id);
     }
@@ -90,18 +96,26 @@ async function markAsVoted(movieId) {
 // Initialize Firebase
 async function initializeFirebase() {
     try {
+        // Import Firebase modules from CDN
         const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
         const { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, where } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
         
+        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         db = getFirestore(app);
         
+        // Store Firestore functions globally for easy access
         window.firestoreFunctions = { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, where };
         
         console.log('Firebase initialized successfully');
         
+        // Get or create user ID
         userId = getUserId();
+        
+        // Load user's votes from Firebase
         await loadUserVotes();
+        
+        // Start listening to real-time updates
         startRealtimeListener();
         
     } catch (error) {
@@ -136,6 +150,11 @@ function startRealtimeListener() {
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', async () => {
+    // Load configuration first
+    if (window.configLoader) {
+        await window.configLoader.loadConfig();
+    }
+    
     loadAdminPassword();
     initializeEventListeners();
     await initializeFirebase();
@@ -143,15 +162,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Initialize event listeners
 function initializeEventListeners() {
+    // Movie search
     const searchInput = document.getElementById('movieSearch');
     searchInput.addEventListener('input', handleSearch);
     
+    // Close search results when clicking outside
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.search-container')) {
             document.getElementById('searchResults').classList.remove('active');
         }
     });
     
+    // Admin modal
     const adminBtn = document.getElementById('adminBtn');
     const modal = document.getElementById('adminModal');
     const closeBtn = document.querySelector('.close');
@@ -176,11 +198,13 @@ function initializeEventListeners() {
         }
     });
     
+    // Admin login
     document.getElementById('loginBtn').addEventListener('click', handleAdminLogin);
     document.getElementById('adminPassword').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') handleAdminLogin();
     });
     
+    // Admin actions
     document.getElementById('resetVotesBtn').addEventListener('click', resetAllVotes);
     document.getElementById('clearAllBtn').addEventListener('click', clearAllMovies);
     document.getElementById('exportBtn').addEventListener('click', exportToCSV);
@@ -190,133 +214,6 @@ function initializeEventListeners() {
         section.style.display = section.style.display === 'none' ? 'block' : 'none';
     });
     document.getElementById('savePasswordBtn').addEventListener('click', changePassword);
-}
-
-// Export to Google Sheets
-function exportToGoogleSheets() {
-    if (movies.length === 0) {
-        alert('No movies to export!');
-        return;
-    }
-    
-    const sortedMovies = [...movies];
-    
-    // Create TSV content (tab-separated for Google Sheets paste)
-    let tsv = 'Rank\tTitle\tYear\tVotes\tDuration\tTMDB Link\n';
-    sortedMovies.forEach((movie, index) => {
-        const duration = movie.runtime && movie.runtime > 0 ? `${movie.runtime} min` : 'N/A';
-        const tmdbLink = `https://www.themoviedb.org/movie/${movie.id}`;
-        tsv += `${index + 1}\t${movie.title}\t${movie.year}\t${movie.votes}\t${duration}\t${tmdbLink}\n`;
-    });
-    
-    const newWindow = window.open('', '_blank');
-    newWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Export to Google Sheets</title>
-            <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    max-width: 800px;
-                    margin: 50px auto;
-                    padding: 20px;
-                    background: #f5f5f5;
-                }
-                .container {
-                    background: white;
-                    padding: 30px;
-                    border-radius: 10px;
-                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                }
-                h1 {
-                    color: #e50914;
-                }
-                .step {
-                    margin: 20px 0;
-                    padding: 15px;
-                    background: #f9f9f9;
-                    border-left: 4px solid #e50914;
-                }
-                button {
-                    background: #e50914;
-                    color: white;
-                    border: none;
-                    padding: 15px 30px;
-                    font-size: 16px;
-                    border-radius: 5px;
-                    cursor: pointer;
-                    margin: 10px 5px;
-                }
-                button:hover {
-                    background: #b20710;
-                }
-                .secondary {
-                    background: #666;
-                }
-                .secondary:hover {
-                    background: #444;
-                }
-                textarea {
-                    width: 100%;
-                    height: 150px;
-                    padding: 10px;
-                    border: 1px solid #ddd;
-                    border-radius: 5px;
-                    font-family: monospace;
-                    font-size: 12px;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>📊 Export to Google Sheets</h1>
-                
-                <div class="step">
-                    <h3>Step 1: Copy the data below</h3>
-                    <textarea id="tsvData" readonly>${tsv}</textarea>
-                    <button onclick="copyData()">📋 Copy Data</button>
-                    <span id="copyStatus" style="color: green; margin-left: 10px;"></span>
-                </div>
-                
-                <div class="step">
-                    <h3>Step 2: Open Google Sheets</h3>
-                    <button onclick="openSheets()">🚀 Open Google Sheets</button>
-                </div>
-                
-                <div class="step">
-                    <h3>Step 3: Paste the data</h3>
-                    <p>In the new Google Sheet:</p>
-                    <ol>
-                        <li>Click on cell <strong>A1</strong></li>
-                        <li>Press <strong>Ctrl+V</strong> (or Cmd+V on Mac) to paste</li>
-                        <li>The data will automatically format into columns</li>
-                    </ol>
-                </div>
-                
-                <button class="secondary" onclick="window.close()">✓ Done</button>
-            </div>
-            
-            <script>
-                function copyData() {
-                    const textarea = document.getElementById('tsvData');
-                    textarea.select();
-                    document.execCommand('copy');
-                    document.getElementById('copyStatus').textContent = '✓ Copied!';
-                    setTimeout(() => {
-                        document.getElementById('copyStatus').textContent = '';
-                    }, 2000);
-                }
-                
-                function openSheets() {
-                    window.open('https://sheets.new', '_blank');
-                }
-            </script>
-        </body>
-        </html>
-    `);
-    
-    showNotification('Opening Google Sheets export...');
 }
 
 // Handle movie search
@@ -329,11 +226,15 @@ async function handleSearch(e) {
         return;
     }
     
+    // Get API key from config
+    const apiKey = window.configLoader ? window.configLoader.getTmdbApiKey() : TMDB_API_KEY;
+    
+    // Debounce search
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(async () => {
         try {
             const response = await fetch(
-                `${TMDB_BASE_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=en-US&page=1`
+                `${TMDB_BASE_URL}/search/movie?api_key=${apiKey}&query=${encodeURIComponent(query)}&language=en-US&page=1`
             );
             
             if (!response.ok) {
@@ -380,6 +281,7 @@ function displaySearchResults(results) {
     
     resultsContainer.classList.add('active');
     
+    // Add click listeners to search results
     resultsContainer.querySelectorAll('.search-result-item').forEach(item => {
         item.addEventListener('click', () => {
             const movieId = parseInt(item.getAttribute('data-movie-id'));
@@ -390,6 +292,7 @@ function displaySearchResults(results) {
 
 // Add movie to Firebase
 async function addMovie(movieId) {
+    // Check if movie already exists
     if (movies.some(m => m.id === movieId)) {
         alert('This movie is already in the voting list!');
         document.getElementById('searchResults').classList.remove('active');
@@ -397,9 +300,12 @@ async function addMovie(movieId) {
         return;
     }
     
+    // Get API key from config
+    const apiKey = window.configLoader ? window.configLoader.getTmdbApiKey() : TMDB_API_KEY;
+    
     try {
         const response = await fetch(
-            `${TMDB_BASE_URL}/movie/${movieId}?api_key=${TMDB_API_KEY}&language=en-US`
+            `${TMDB_BASE_URL}/movie/${movieId}?api_key=${apiKey}&language=en-US`
         );
         
         if (!response.ok) {
@@ -417,28 +323,31 @@ async function addMovie(movieId) {
                 ? `${TMDB_IMAGE_BASE}${movieData.poster_path}`
                 : 'https://via.placeholder.com/300x450?text=No+Poster',
             rating: movieData.vote_average ? movieData.vote_average.toFixed(1) : 'N/A',
-            runtime: movieData.runtime || 0,
+            runtime: movieData.runtime || null,
             votes: 0,
             addedAt: new Date().toISOString()
         };
         
+        // Add to Firebase
         const { collection, addDoc } = window.firestoreFunctions;
         await addDoc(collection(db, 'movies'), movie);
         
+        // Clear search
         document.getElementById('searchResults').classList.remove('active');
         document.getElementById('movieSearch').value = '';
         
-        showNotification(`"${movie.title}" lagt til!`);
+        showNotification(`"${movie.title}" added successfully!`);
     } catch (error) {
         console.error('Error adding movie:', error);
-        alert('En feil oppstod, prøv igjen.');
+        alert('Error adding movie. Please try again.');
     }
 }
 
 // Vote for a movie
 async function voteForMovie(movieId, buttonElement) {
+    // Check if user has already voted on this movie
     if (hasUserVoted(movieId)) {
-        showNotification('Du har allerede stemt på denne filmen!');
+        showNotification('You have already voted for this movie!');
         return;
     }
     
@@ -451,24 +360,27 @@ async function voteForMovie(movieId, buttonElement) {
                 votes: movie.votes + 1
             });
             
+            // Mark as voted
             markAsVoted(movieId);
             
+            // Update button appearance
             if (buttonElement) {
                 buttonElement.disabled = true;
-                buttonElement.textContent = '✓ Stemt';
+                buttonElement.textContent = '✓ Voted';
                 buttonElement.style.background = '#666';
                 buttonElement.style.cursor = 'not-allowed';
                 
+                // Animate vote button
                 buttonElement.style.transform = 'scale(1.2)';
                 setTimeout(() => {
                     buttonElement.style.transform = 'scale(1)';
                 }, 200);
             }
             
-            showNotification('Stemme registrert!');
+            showNotification('Vote recorded!');
         } catch (error) {
             console.error('Error voting:', error);
-            alert('En feil oppstod, prøv igjen.');
+            alert('Error recording vote. Please try again.');
         }
     }
 }
@@ -478,18 +390,19 @@ function renderMovies() {
     const moviesList = document.getElementById('moviesList');
     const movieCount = document.getElementById('movieCount');
     
+    // Sort by votes (descending) - already sorted by Firebase query
     const sortedMovies = [...movies];
     
-    movieCount.textContent = `${movies.length} ${movies.length !== 1 ? 'filmer' : 'film'}`;
+    movieCount.textContent = `${movies.length} movie${movies.length !== 1 ? 's' : ''}`;
     
     if (sortedMovies.length === 0) {
-        moviesList.innerHTML = '<p class="empty-state">Ingen filmer lagt til enda, søk etter den filmen du vil se over!</p>';
+        moviesList.innerHTML = '<p class="empty-state">No movies added yet. Be the first to suggest one!</p>';
         return;
     }
     
     moviesList.innerHTML = sortedMovies.map(movie => {
         const hasVoted = hasUserVoted(movie.id);
-        const buttonText = hasVoted ? '✓ Stemt' : '👍 Stem Opp';
+        const buttonText = hasVoted ? '✓ Voted' : '👍 Upvote';
         const buttonStyle = hasVoted ? 'background: #666; cursor: not-allowed;' : '';
         const buttonDisabled = hasVoted ? 'disabled' : '';
         
@@ -512,6 +425,7 @@ function renderMovies() {
         `;
     }).join('');
     
+    // Add click listeners to vote buttons (only for non-disabled buttons)
     moviesList.querySelectorAll('.vote-btn:not([disabled])').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const movieId = parseInt(btn.getAttribute('data-movie-id'));
@@ -558,6 +472,7 @@ function renderAdminMoviesList() {
         </div>
     `).join('');
     
+    // Add click listeners to delete buttons
     adminMoviesList.querySelectorAll('.admin-movie-actions button').forEach(btn => {
         btn.addEventListener('click', () => {
             const firestoreId = btn.getAttribute('data-firestore-id');
@@ -586,6 +501,7 @@ async function resetAllVotes() {
         try {
             const { doc, updateDoc, collection, getDocs, deleteDoc } = window.firestoreFunctions;
             
+            // Reset movie vote counts
             for (const movie of movies) {
                 if (movie.firestoreId) {
                     const movieRef = doc(db, 'movies', movie.firestoreId);
@@ -593,6 +509,7 @@ async function resetAllVotes() {
                 }
             }
             
+            // Delete all vote records from Firebase
             const votesRef = collection(db, 'votes');
             const snapshot = await getDocs(votesRef);
             const deletePromises = [];
@@ -601,6 +518,7 @@ async function resetAllVotes() {
             });
             await Promise.all(deletePromises);
             
+            // Clear local user votes
             userVotes = {};
             
             showNotification('All votes reset to 0!');
@@ -618,12 +536,14 @@ async function clearAllMovies() {
             try {
                 const { doc, deleteDoc, collection, getDocs } = window.firestoreFunctions;
                 
+                // Delete all movies
                 for (const movie of movies) {
                     if (movie.firestoreId) {
                         await deleteDoc(doc(db, 'movies', movie.firestoreId));
                     }
                 }
                 
+                // Delete all vote records
                 const votesRef = collection(db, 'votes');
                 const snapshot = await getDocs(votesRef);
                 const deletePromises = [];
@@ -632,6 +552,7 @@ async function clearAllMovies() {
                 });
                 await Promise.all(deletePromises);
                 
+                // Clear local user votes
                 userVotes = {};
                 
                 showNotification('All movies and votes cleared!');
@@ -652,12 +573,14 @@ function exportToCSV() {
     
     const sortedMovies = [...movies];
     
+    // Create CSV content
     let csv = 'Rank,Title,Year,Votes,Rating,Overview\n';
     sortedMovies.forEach((movie, index) => {
         const overview = movie.overview.replace(/"/g, '""');
         csv += `${index + 1},"${movie.title}",${movie.year},${movie.votes},${movie.rating},"${overview}"\n`;
     });
     
+    // Create download link
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -669,6 +592,130 @@ function exportToCSV() {
     window.URL.revokeObjectURL(url);
     
     showNotification('CSV exported successfully!');
+}
+
+// Export to Google Sheets
+async function exportToGoogleSheets() {
+    if (movies.length === 0) {
+        alert('Ingen filmer å eksportere');
+        return;
+    }
+    
+    const sortedMovies = [...movies];
+    
+    // Fetch runtime for movies that don't have it
+    const apiKey = window.configLoader ? window.configLoader.getTmdbApiKey() : TMDB_API_KEY;
+    const moviesWithRuntime = await Promise.all(sortedMovies.map(async (movie) => {
+        if (!movie.runtime) {
+            try {
+                const response = await fetch(`${TMDB_BASE_URL}/movie/${movie.id}?api_key=${apiKey}&language=en-US`);
+                const data = await response.json();
+                movie.runtime = data.runtime || null;
+            } catch (error) {
+                console.error('Error fetching runtime for movie:', movie.title, error);
+            }
+        }
+        return movie;
+    }));
+    
+    // Create TSV content with headers
+    let tsv = 'Rank\tTitle\tYear\tVotes\tDuration\tTMDB Link\n';
+    moviesWithRuntime.forEach((movie, index) => {
+        const rank = index + 1;
+        const title = movie.title || 'N/A';
+        const year = movie.year || 'N/A';
+        const votes = movie.votes || 0;
+        const duration = movie.runtime ? `${movie.runtime} min` : 'N/A';
+        const tmdbLink = `https://www.themoviedb.org/movie/${movie.id}`;
+        
+        tsv += `${rank}\t${title}\t${year}\t${votes}\t${duration}\t${tmdbLink}\n`;
+    });
+    
+    // Create a popup window with instructions
+    const popup = window.open('', 'Export to Google Sheets', 'width=600,height=400');
+    popup.document.write(`
+        <html>
+        <head>
+            <title>Eksporter til Google Sheets</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    padding: 20px;
+                    background: #f5f5f5;
+                }
+                .container {
+                    background: white;
+                    padding: 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }
+                h2 {
+                    color: #333;
+                    margin-top: 0;
+                }
+                .instructions {
+                    background: #e3f2fd;
+                    padding: 15px;
+                    border-radius: 4px;
+                    margin: 15px 0;
+                }
+                .instructions ol {
+                    margin: 10px 0;
+                    padding-left: 20px;
+                }
+                textarea {
+                    width: 100%;
+                    height: 200px;
+                    font-family: monospace;
+                    font-size: 12px;
+                    padding: 10px;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    box-sizing: border-box;
+                }
+                button {
+                    background: #4CAF50;
+                    color: white;
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    margin-top: 10px;
+                }
+                button:hover {
+                    background: #45a049;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h2>Eksporter til Google Sheets</h2>
+                <div class="instructions">
+                    <strong>Instruksjoner:</strong>
+                    <ol>
+                        <li>Klikk "Kopier Data" knappen nedenfor</li>
+                        <li>Åpne Google Sheets</li>
+                        <li>Velg celle A1</li>
+                        <li>Trykk Ctrl+V (eller Cmd+V på Mac) for å lime inn</li>
+                    </ol>
+                </div>
+                <textarea id="tsvData" readonly>${tsv}</textarea>
+                <button onclick="copyToClipboard()">Kopier Data</button>
+            </div>
+            <script>
+                function copyToClipboard() {
+                    const textarea = document.getElementById('tsvData');
+                    textarea.select();
+                    document.execCommand('copy');
+                    alert('Data kopiert! Lim inn i Google Sheets.');
+                }
+            </script>
+        </body>
+        </html>
+    `);
+    
+    showNotification('Åpner Google Sheets eksport...');
 }
 
 // Change admin password
@@ -714,6 +761,7 @@ function showNotification(message) {
     }, 3000);
 }
 
+// Add animation styles
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideIn {
