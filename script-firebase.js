@@ -219,10 +219,11 @@ function exportToGoogleSheets() {
     const sortedMovies = [...movies];
     
     // Create TSV content (tab-separated for Google Sheets paste)
-    let tsv = 'Rank\tTitle\tYear\tVotes\tRating\tOverview\n';
+    let tsv = 'Rank\tTitle\tYear\tVotes\tDuration\tTMDB Link\n';
     sortedMovies.forEach((movie, index) => {
-        const overview = movie.overview.replace(/\t/g, ' ').replace(/\n/g, ' ');
-        tsv += `${index + 1}\t${movie.title}\t${movie.year}\t${movie.votes}\t${movie.rating}\t${overview}\n`;
+        const duration = movie.runtime ? `${movie.runtime} min` : 'N/A';
+        const tmdbLink = `https://www.themoviedb.org/movie/${movie.id}`;
+        tsv += `${index + 1}\t${movie.title}\t${movie.year}\t${movie.votes}\t${duration}\t${tmdbLink}\n`;
     });
     
     // Open in new tab with instructions
@@ -438,6 +439,7 @@ async function addMovie(movieId) {
                 ? `${TMDB_IMAGE_BASE}${movieData.poster_path}`
                 : 'https://via.placeholder.com/300x450?text=No+Poster',
             rating: movieData.vote_average ? movieData.vote_average.toFixed(1) : 'N/A',
+            runtime: movieData.runtime || 0,
             votes: 0,
             addedAt: new Date().toISOString()
         };
