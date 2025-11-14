@@ -12,15 +12,7 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-      
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
         
-    - name: Install dependencies
-      run: npm install
-      
     - name: Create config.js from secrets
       run: |
         echo 'window.CONFIG = {' > config.js
@@ -35,7 +27,7 @@ jobs:
         cp styles.css dist/
         cp script-firebase.js dist/
         cp config.js dist/
-        cp schedule-simple.html dist/
+        if [ -f schedule-simple.html ]; then cp schedule-simple.html dist/; fi
         
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
