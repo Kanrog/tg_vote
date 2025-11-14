@@ -221,7 +221,7 @@ function exportToGoogleSheets() {
     // Create TSV content (tab-separated for Google Sheets paste)
     let tsv = 'Rank\tTitle\tYear\tVotes\tDuration\tTMDB Link\n';
     sortedMovies.forEach((movie, index) => {
-        const duration = movie.runtime ? `${movie.runtime} min` : 'N/A';
+        const duration = movie.runtime && movie.runtime > 0 ? `${movie.runtime} min` : 'N/A';
         const tmdbLink = `https://www.themoviedb.org/movie/${movie.id}`;
         tsv += `${index + 1}\t${movie.title}\t${movie.year}\t${movie.votes}\t${duration}\t${tmdbLink}\n`;
     });
