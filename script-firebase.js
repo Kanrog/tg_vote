@@ -1,8 +1,8 @@
 // Configuration
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
-let TMDB_API_KEY = window.CONFIG ? window.CONFIG.tmdbApiKey : 'YOUR_API_KEY_HERE';
-let DEFAULT_ADMIN_PASSWORD = window.CONFIG ? window.CONFIG.adminPassword : 'admin123';
+const TMDB_API_KEY = '65d522ce451d6a137a804b350eac8894';
+const DEFAULT_ADMIN_PASSWORD = 'admin123';
 
 // Firebase Configuration
 const firebaseConfig = {
