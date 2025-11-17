@@ -168,7 +168,39 @@
                 justify-content: center;
             }
         }
-    </style>
+    
+
+               /* Language Selector */
+               .language-selector {
+                   display: flex;
+                   gap: 5px;
+                   justify-content: center;
+                   margin-bottom: 20px;
+               }
+
+               .lang-btn {
+                   background: rgba(255, 255, 255, 0.1);
+                   border: 2px solid rgba(255, 255, 255, 0.3);
+                   color: white;
+                   padding: 8px 12px;
+                   border-radius: 8px;
+                   cursor: pointer;
+                   font-size: 14px;
+                   transition: all 0.3s ease;
+                   backdrop-filter: blur(10px);
+               }
+
+               .lang-btn:hover {
+                   background: rgba(255, 255, 255, 0.2);
+                   border-color: rgba(255, 255, 255, 0.5);
+                   transform: translateY(-2px);
+               }
+
+               .lang-btn.active {
+                   background: var(--primary-color, #ea7b31);
+                   border-color: var(--primary-color, #ea7b31);
+                   box-shadow: 0 4px 8px rgba(234, 123, 49, 0.3);
+               }</style>
 <script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
 </head>
 <body>
@@ -192,6 +224,61 @@
     </div>
 
     <script>
+           // Translation system
+           const translations = {
+               no: {
+                   backToVoting: "← Tilbake til avstemning",
+                   scheduleTitle: "🎬 TG26 Kinotider",
+                   loadingTimes: "Laster tider...",
+                   loadingSchedule: "Laster timeplan...",
+                   refreshSchedule: "🔄 Oppdater",
+                   noMoviesScheduled: "Ingen filmer planlagt ennå",
+                   noMoviesScheduledText: "Timeplanen vil vises her når den er satt opp.",
+                   unableToLoadSchedule: "Kan ikke laste timeplan",
+                   unableToLoadScheduleText: "Sjekk at Google Sheet er offentlig tilgjengelig.",
+                   todayDate: "Dato"
+               },
+               en: {
+                   backToVoting: "← Back to Voting",
+                   scheduleTitle: "🎬 TG26 Movie Schedule",
+                   loadingTimes: "Loading schedule...",
+                   loadingSchedule: "Loading schedule...",
+                   refreshSchedule: "🔄 Refresh",
+                   noMoviesScheduled: "No Movies Scheduled Yet",
+                   noMoviesScheduledText: "The schedule will appear here once it's been set up.",
+                   unableToLoadSchedule: "Unable to Load Schedule",
+                   unableToLoadScheduleText: "Please check that the Google Sheet is publicly accessible.",
+                   todayDate: "Date"
+               }
+           };
+
+           let currentLang = localStorage.getItem('language') || 'no';
+
+           // Language switching
+           function switchLanguage(lang) {
+               currentLang = lang;
+               localStorage.setItem('language', lang);
+               
+               // Update button states
+               document.querySelectorAll('.lang-btn').forEach(btn => {
+                   btn.classList.toggle('active', btn.dataset.lang === lang);
+               });
+               
+               // Update all elements with data-i18n attribute
+               document.querySelectorAll('[data-i18n]').forEach(element => {
+                   const key = element.getAttribute('data-i18n');
+                   if (translations[lang][key]) {
+                       element.textContent = translations[lang][key];
+                   }
+               });
+               
+               // Refresh schedule to update dynamic content
+               if (typeof loadSchedule === 'function') {
+                   loadSchedule();
+               }
+           }
+
+
         // CONFIGURATION - Replace with your Google Sheet ID
         const GOOGLE_SHEET_ID = '16wHVW-MeOC2cM5caZae4ocQkgW147k8fURJE1o3QRjI';
         const SHEET_NAME = 'Schedule'; // Name of the sheet tab
@@ -352,3 +439,16 @@ async function updateDate() {
     </script>
 </body>
 </html>
+
+// Initialize language system when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize language
+    switchLanguage(currentLang);
+    
+    // Add language switcher event listeners
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            switchLanguage(btn.dataset.lang);
+        });
+    });
+});

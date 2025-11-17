@@ -905,3 +905,16 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+// Initialize language system when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize language
+    switchLanguage(currentLang);
+    
+    // Add language switcher event listeners
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            switchLanguage(btn.dataset.lang);
+        });
+    });
+});
