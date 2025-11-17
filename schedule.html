@@ -199,16 +199,34 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadSchedule();
             startAutoRefresh();
-            updateDate();
+            updateDate(); // This is now async
         });
 
         // Update current date
-        function updateDate() {
-            const dateElement = document.getElementById('scheduleDate');
-            const today = new Date();
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            dateElement.textContent = today.toLocaleDateString('en-US', options);
+async function updateDate() {
+    const dateElement = document.getElementById('scheduleDate');
+    
+    try {
+        // Load the sheet data to get the custom date from D3
+        const csvUrl = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`;
+        const response = await fetch(csvUrl);
+        const csvText = await response.text();
+        const lines = csvText.split('\n').filter(line => line.trim());
+        
+        if (lines.length >= 3) {
+            // Get row 3 (index 2) and column D (index 3)
+            const thirdRow = parseCSVLine(lines[2]);
+            const customDate = thirdRow[3] ? thirdRow[3].replace(/"/g, '').trim() : 'Schedule Date';
+            dateElement.textContent = customDate;
+        } else {
+            dateElement.textContent = 'Schedule Date';
         }
+    } catch (error) {
+        console.error('Error loading custom date:', error);
+        dateElement.textContent = 'Schedule Date';
+    }
+}
+
 
         // Load schedule from Google Sheets
         async function loadSchedule() {
