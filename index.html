@@ -32,20 +32,24 @@
 <body>
     <div class="container">
         <header>
-            <h1>🎬 TG26 Frivilligpleie Kino</h1>
+            <div class="language-selector">
+                <button class="lang-btn active" data-lang="no">🇳🇴 NO</button>
+                <button class="lang-btn" data-lang="en">🇬🇧 EN</button>
+            </div>
+            <h1 data-i18n="title">🎬 TG26 Frivilligpleie Kino</h1>
             <img src="TGlogo-300x300.png" alt="TG-Logo" class="event-logo">
-            <p class="subtitle">Stem på hvilken film du vil se!</p>
-            <button id="adminBtn" class="admin-btn">Admin Panel</button>
+            <p class="subtitle" data-i18n="voteSubtitle">Stem på hvilken film du vil se!</p>
+            <button id="adminBtn" class="admin-btn" data-i18n="adminPanel">Admin Panel</button>
             <a href="schedule.html" class="schedule-link">
-                📅 Vis Kinotider
+                <span data-i18n="scheduleLink">📅 Vis Kinotider</span>
             </a>
-            <p class="subtitle">Oppdateres hver dag, ca klokken 22:00</p>
+            <p class="subtitle" data-i18n="updateInfo">Oppdateres hver dag, ca klokken 22:00</p>
         </header>
 
         <div class="search-section">
             <h2>Søk etter film</h2>
             <div class="search-container">
-                <input type="text" id="movieSearch" placeholder="Søk etter film..." autocomplete="off">
+                <input type="text" id="movieSearch" data-i18n-placeholder="searchPlaceholder" placeholder="Søk etter film..." autocomplete="off">
                 <div id="searchResults" class="search-results"></div>
             </div>
         </div>

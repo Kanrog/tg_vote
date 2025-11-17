@@ -1,3 +1,120 @@
+// Translation system
+const translations = {
+    no: {
+        title: "🎬 TG26 Frivilligpleie Kino",
+        voteSubtitle: "Stem på hvilken film du vil se!",
+        adminPanel: "Admin Panel",
+        scheduleLink: "📅 Vis Kinotider",
+        updateInfo: "Oppdateres hver dag, ca klokken 22:00",
+        searchPlaceholder: "Søk etter film...",
+        noResults: "Ingen filmer funnet",
+        alreadyAdded: "Denne filmen er allerede i listen!",
+        voteSuccess: "Stem registrert!",
+        alreadyVoted: "Du har allerede stemt på denne filmen!",
+        movieAdded: "filmen ble lagt til!",
+        errorAddingMovie: "Feil ved tillegg av film. Prøv igjen.",
+        noMoviesToExport: "Ingen filmer å eksportere",
+        openingExport: "Åpner Google Sheets eksport...",
+        dataCopied: "Data kopiert! Lim inn i Google Sheets.",
+        exportInstructions: "Instruksjoner:",
+        exportStep1: "Klikk "Kopier Data" knappen nedenfor",
+        exportStep2: "Åpne Google Sheets",
+        exportStep3: "Velg celle A1",
+        exportStep4: "Trykk Ctrl+V (eller Cmd+V på Mac) for å lime inn",
+        exportTitle: "Eksporter til Google Sheets",
+        copyData: "Kopier Data",
+        loadingVotes: "Laster inn stemmer...",
+        currentRanking: "Nåværende rangering",
+        votes: "stemmer",
+        vote: "stem",
+        upvote: "Stem opp",
+        movieInfo: "Filminfo",
+        director: "Regissør",
+        runtime: "Varighet",
+        genre: "Sjanger",
+        rating: "Vurdering",
+        releaseYear: "Utgivelsesår",
+        overview: "Oversikt",
+        addToVoting: "Legg til i avstemning",
+        searchForMovies: "Søk etter filmer å legge til"
+    },
+    en: {
+        title: "🎬 TG26 Volunteer Cinema",
+        voteSubtitle: "Vote for the movie you want to watch!",
+        adminPanel: "Admin Panel",
+        scheduleLink: "📅 View Schedule",
+        updateInfo: "Updated daily around 22:00",
+        searchPlaceholder: "Search for movies...",
+        noResults: "No movies found",
+        alreadyAdded: "This movie is already in the voting list!",
+        voteSuccess: "Vote recorded!",
+        alreadyVoted: "You have already voted for this movie!",
+        movieAdded: "movie added successfully!",
+        errorAddingMovie: "Error adding movie. Please try again.",
+        noMoviesToExport: "No movies to export",
+        openingExport: "Opening Google Sheets export...",
+        dataCopied: "Data copied! Paste into Google Sheets.",
+        exportInstructions: "Instructions:",
+        exportStep1: "Click "Copy Data" button below",
+        exportStep2: "Open Google Sheets",
+        exportStep3: "Select cell A1",
+        exportStep4: "Press Ctrl+V (or Cmd+V on Mac) to paste",
+        exportTitle: "Export to Google Sheets",
+        copyData: "Copy Data",
+        loadingVotes: "Loading votes...",
+        currentRanking: "Current Ranking",
+        votes: "votes",
+        vote: "vote",
+        upvote: "Vote",
+        movieInfo: "Movie Info",
+        director: "Director",
+        runtime: "Runtime",
+        genre: "Genre",
+        rating: "Rating",
+        releaseYear: "Release Year",
+        overview: "Overview",
+        addToVoting: "Add to Voting",
+        searchForMovies: "Search for movies to add"
+    }
+};
+
+let currentLang = localStorage.getItem("language") || "no";
+
+// Language switching
+function switchLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("language", lang);
+
+    // Update button states
+    document.querySelectorAll(".lang-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.lang === lang);
+    });
+
+    // Update all elements with data-i18n attribute
+    document.querySelectorAll("[data-i18n]").forEach(element => {
+        const key = element.getAttribute("data-i18n");
+        if (translations[lang][key]) {
+            element.textContent = translations[lang][key];
+        }
+    });
+
+    // Update placeholders
+    document.querySelectorAll("[data-i18n-placeholder]").forEach(element => {
+        const key = element.getAttribute("data-i18n-placeholder");
+        if (translations[lang][key]) {
+            element.placeholder = translations[lang][key];
+        }
+    });
+
+    // Update page title
+    document.title = translations[lang].title;
+
+    // Refresh movies to update dynamic content
+    if (typeof displayMovies === "function") {
+        displayMovies();
+    }
+}
+
 // Configuration (loaded from external config file)
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
@@ -393,10 +510,11 @@ function renderMovies() {
     // Sort by votes (descending) - already sorted by Firebase query
     const sortedMovies = [...movies];
     
-    movieCount.textContent = `${movies.length} movie${movies.length !== 1 ? 's' : ''}`;
+    const voteText = translations[currentLang].votes;
+       movieCount.textContent = `${movies.length} film${movies.length !== 1 ? 'er' : ''}`;
     
     if (sortedMovies.length === 0) {
-        moviesList.innerHTML = '<p class="empty-state">Ingen filmer er lagt til enda, legg til en film for å stemme!</p>';
+        moviesList.innerHTML = `<p class="empty-state">${translations[currentLang].noResults ? translations[currentLang].noResults : 'Ingen filmer er lagt til enda, legg til en film for å stemme!'}</p>`;
         return;
     }
     

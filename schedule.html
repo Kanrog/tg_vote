@@ -173,15 +173,19 @@
 </head>
 <body>
     <div class="schedule-container">
-        <a href="index.html" class="back-button">← Tilbake</a>
+        <div class="language-selector">
+               <button class="lang-btn active" data-lang="no">🇳🇴 NO</button>
+               <button class="lang-btn" data-lang="en">🇬🇧 EN</button>
+           </div>
+           <a href="index.html" class="back-button" data-i18n="backToVoting">← Tilbake</a>
         
         <div class="schedule-header">
-            <h1>🎬 TG26 Kinotider</h1>
+            <h1 data-i18n="scheduleTitle">🎬 TG26 Kinotider</h1>
             <p class="schedule-date" id="scheduleDate">Laster...</p>
         </div>
 
         <div id="scheduleContent" class="loading">
-            Laster tider...
+            <span data-i18n="loadingTimes">Laster tider...</span>
         </div>
 
         <button class="refresh-button" onclick="loadSchedule()">🔄 Oppdater</button>
