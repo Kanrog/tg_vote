@@ -207,16 +207,16 @@ async function updateDate() {
     const dateElement = document.getElementById('scheduleDate');
     
         try {
-            // Load the sheet data to get the custom date from D1
+            // Load the sheet data to get the custom date from F2
             const csvUrl = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`;
             const response = await fetch(csvUrl);
             const csvText = await response.text();
             const lines = csvText.split('\n').filter(line => line.trim());
             
-            if (lines.length >= 1) {
-                // Get row 1 (index 0) and column D (index 3)
-                const firstRow = parseCSVLine(lines[0]);
-                const customDate = firstRow[3] ? firstRow[3].replace(/"/g, '').trim() : 'Schedule Date';
+            if (lines.length >= 2) {
+                // Get row 2 (index 1) and column F (index 5)
+                const secondRow = parseCSVLine(lines[1]);
+                const customDate = secondRow[5] ? secondRow[5].replace(/"/g, '').trim() : 'Schedule Date';
                 dateElement.textContent = customDate;
             } else {
                 dateElement.textContent = 'Schedule Date';
@@ -225,6 +225,7 @@ async function updateDate() {
             console.error('Error loading custom date:', error);
             dateElement.textContent = 'Schedule Date';
         }
+
 }
 
 
