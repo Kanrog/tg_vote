@@ -36,7 +36,11 @@ const translations = {
         releaseYear: "Utgivelsesår",
         overview: "Oversikt",
         addToVoting: "Legg til i avstemning",
-        searchForMovies: "Søk etter filmer å legge til"
+        searchForMovies: "Søk etter filmer å legge til",
+        searchTitle: "Søk etter film",
+        voteFavorites: "Stem på dine favoritter",
+        moderationNotice: "Vi reserverer oss retten til å moderere listen etter behov.",
+        voted: "Stemt"
     },
     en: {
         title: "🎬 TG26 Volunteer Cinema",
@@ -74,7 +78,11 @@ const translations = {
         releaseYear: "Release Year",
         overview: "Overview",
         addToVoting: "Add to Voting",
-        searchForMovies: "Search for movies to add"
+        searchForMovies: "Search for movies to add",
+        searchTitle: "Search for Movies",
+        voteFavorites: "Vote for Your Favorites",
+        moderationNotice: "We reserve the right to moderate the list as needed.",
+        voted: "Voted"
     }
 };
 
@@ -530,7 +538,7 @@ function renderMovies() {
     
     moviesList.innerHTML = sortedMovies.map(movie => {
         const hasVoted = hasUserVoted(movie.id);
-        const buttonText = hasVoted ? '✓ Stemt' : '👍 Stem opp';
+        const buttonText = hasVoted ? `✓ ${translations[currentLang].voted}` : `👍 ${translations[currentLang].upvote}`;
         const buttonStyle = hasVoted ? 'background: #666; cursor: not-allowed;' : '';
         const buttonDisabled = hasVoted ? 'disabled' : '';
         
