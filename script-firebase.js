@@ -39,7 +39,7 @@ const translations = {
         searchForMovies: "Søk etter filmer å legge til",
         searchTitle: "Søk etter film",
         voteFavorites: "Stem på dine favoritter",
-        moderationNotice: "Vi reserverer oss retten til å moderere listen etter behov.",
+        moderationNotice: "Vi reserverer oss retten til å moderere listen etter behov. Missbruk av siden kan føre til stans av tilbudet",
         voted: "Stemt"
     },
     en: {
@@ -81,7 +81,7 @@ const translations = {
         searchForMovies: "Search for movies to add",
         searchTitle: "Search for Movies",
         voteFavorites: "Vote for Your Favorites",
-        moderationNotice: "We reserve the right to moderate the list as needed.",
+        moderationNotice: "We reserve the right to moderate the list as needed. Misuse of the site may lead to termination of the service.",
         voted: "Voted"
     }
 };
