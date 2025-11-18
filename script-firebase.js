@@ -2,7 +2,7 @@
 const translations = {
     no: {
         title: "🎬 TG26 Frivilligpleie Kino",
-        voteSubtitle: "Stem på hvilken film du vil se!",
+        voteSubtitle: "Stem på hvilken film du vil se! Vi lager et nytt program hver dag basert på de mest populære filmene på denne siden.",
         adminPanel: "Admin Panel",
         scheduleLink: "📅 Vis Kinotider",
         updateInfo: "Oppdateres hver dag, ca klokken 22:00",
@@ -44,7 +44,7 @@ const translations = {
     },
     en: {
         title: "🎬 TG26 Volunteer Cinema",
-        voteSubtitle: "Vote for the movie you want to watch!",
+        voteSubtitle: "Vote for the movie you want to watch! We create a new program every day based on the most popular movies on this site.",
         adminPanel: "Admin Panel",
         scheduleLink: "📅 View Schedule",
         updateInfo: "Updated daily around 22:00",
