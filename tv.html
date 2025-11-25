@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TG26 Kinotider - TV Display</title>
+    <style>
+        :root {
+            --primary-color: #ea7b31;
+            --secondary-color: #221f1f;
+            --accent-color: #6fc0f4;
+            --text-color: #ffffff;
+            --card-bg: #2f2f2f;
+            --hover-color: #ee9e36;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: var(--text-color);
+            min-height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Main split-screen layout */
+        .main-container {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 80px); /* Account for header */
+        }
+
+        /* Left side - Movie Schedule (50% width) */
+        .schedule-section {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 2px solid var(--primary-color);
+        }
+
+        /* Right side - Information Boxes (50% width) */
+        .info-section {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Header spanning full width */
+        .main-header {
+            background: var(--secondary-color);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 3px solid var(--primary-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title {
+            font-size: 2.5em;
+            color: var(--primary-color);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .header-date {
+            font-size: 1.2em;
+            color: var(--accent-color);
+        }
+
+        /* Language selector */
+        .language-selector {
+            display: flex;
+            gap: 5px;
+        }
+
+        .lang-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .lang-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .lang-btn.active {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            box-shadow: 0 4px 8px rgba(234, 123, 49, 0.3);
+        }
+
+        /* Schedule Styles */
+        .schedule-timeline {
+            position: relative;
+        }
+
+        .schedule-item {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .schedule-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 6px 12px rgba(229, 9, 20, 0.4);
+        }
+
+        .schedule-time {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: var(--primary-color);
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .schedule-details {
+            flex: 1;
+        }
+
+        .schedule-movie-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: var(--text-color);
+            margin-bottom: 8px;
+        }
+
+        .schedule-info {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            color: #999;
+        }
+
+        .schedule-info-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .schedule-location {
+            background: var(--primary-color);
+            color: var(--text-color);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        /* Information Box Styles */
+        .info-box {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border-left: 4px solid var(--primary-color);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .info-box:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(229, 9, 20, 0.4);
+        }
+
+        .info-box h3 {
+            color: var(--primary-color);
+            font-size: 1.8em;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 10px;
+        }
+
+        .info-box h4 {
+            color: var(--accent-color);
+            font-size: 1.4em;
+            margin-bottom: 10px;
+            margin-top: 15px;
+        }
+
+        .info-box h5 {
+            color: var(--text-color);
+            font-size: 1.1em;
+            margin-bottom: 8px;
+            margin-top: 10px;
+        }
+
+        .info-box p {
+            color: #ccc;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        /* Loading and Error States */
+        .loading, .error, .empty-schedule {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 1.2em;
+        }
+
+        .error {
+            color: #f44336;
+        }
+
+        .empty-schedule h2 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        /* Refresh Button */
+        .refresh-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--primary-color);
+            color: var(--text-color);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 0.9em;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .refresh-button:hover {
+            background: var(--hover-color);
+            transform: scale(1.1);
+        }
+
+        /* Responsive design for smaller screens */
+        @media (max-width: 1024px) {
+            .main-container {
+                flex-direction: column;
+            }
+
+            .schedule-section {
+                border-right: none;
+                border-bottom: 2px solid var(--primary-color);
+                max-height: 50vh;
+            }
+
+            .info-section {
+                max-height: 50vh;
+            }
+
+            .header-title {
+                font-size: 2em;
+            }
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--secondary-color);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--hover-color);
+        }
+    </style>
+<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+</head>
+<body>
+    <header class="main-header">
+        <div class="header-left">
+            <h1 class="header-title" data-i18n="scheduleTitle">🎬 TG26 Kinotider</h1>
+        </div>
+        <div class="header-center">
+            <div class="header-date" id="scheduleDate">Loading...</div>
+        </div>
+        <div class="header-right">
+            <div class="language-selector">
+                <button class="lang-btn active" data-lang="no">🇳🇴 NO</button>
+                <button class="lang-btn" data-lang="en">🇬🇧 EN</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- Left Side: Movie Schedule -->
+        <section class="schedule-section">
+            <div id="scheduleContent" class="loading">
+                <span data-i18n="loadingTimes">Loading schedule...</span>
+            </div>
+        </section>
+
+        <!-- Right Side: Information Boxes -->
+        <section class="info-section">
+            <div id="infoContent">
+                <div class="loading">
+                    <span data-i18n="loadingInfo">Loading information...</span>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <button class="refresh-button" onclick="loadAllData()">🔄 Oppdater</button>
+
+    <script>
+        // Translation system
+        const translations = {
+            no: {
+                scheduleTitle: "🎬 TG26 Kinotider",
+                loadingTimes: "Laster tider...",
+                loadingInfo: "Laster informasjon...",
+                refreshSchedule: "🔄 Oppdater",
+                noMoviesScheduled: "Ingen filmer planlagt ennå",
+                noMoviesScheduledText: "Timeplanen vil vises her når den er satt opp.",
+                unableToLoadSchedule: "Kan ikke laste timeplan",
+                unableToLoadScheduleText: "Sjekk at Google Sheet er offentlig tilgjengelig.",
+                noInformationAvailable: "Ingen informasjon tilgjengelig",
+                todayDate: "Dato"
+            },
+            en: {
+                scheduleTitle: "🎬 TG26 Movie Schedule",
+                loadingTimes: "Loading schedule...",
+                loadingInfo: "Loading information...",
+                refreshSchedule: "🔄 Refresh",
+                noMoviesScheduled: "No Movies Scheduled Yet",
+                noMoviesScheduledText: "The schedule will appear here once it's been set up.",
+                unableToLoadSchedule: "Unable to Load Schedule",
+                unableToLoadScheduleText: "Please check that the Google Sheet is publicly accessible.",
+                noInformationAvailable: "No Information Available",
+                todayDate: "Date"
+            }
+        };
+
+        let currentLang = localStorage.getItem('language') || 'no';
+
+        // Language switching
+        function switchLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('language', lang);
+            
+            // Update button states
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.lang === lang);
+            });
+            
+            // Update all elements with data-i18n attribute
+            document.querySelectorAll('[data-i18n]').forEach(element => {
+                const key = element.getAttribute('data-i18n');
+                if (translations[lang][key]) {
+                    element.textContent = translations[lang][key];
+                }
+            });
+            
+            // Refresh data to update dynamic content
+            loadAllData();
+        }
+
+        // CONFIGURATION - Replace with your Google Sheet ID
+        const GOOGLE_SHEET_ID = '16wHVW-MeOC2cM5caZae4ocQkgW147k8fURJE1o3QRjI';
+        const SHEET_NAME = 'Schedule';
+        
+        // Auto-refresh every 30 seconds
+        let autoRefreshInterval;
+
+        // Load everything on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAllData();
+            startAutoRefresh();
+            updateDate();
+            
+            // Initialize language system
+            switchLanguage(currentLang);
+            
+            // Add language switcher event listeners
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    switchLanguage(btn.dataset.lang);
+                });
+            });
+        });
+
+        // Update current date
+        async function updateDate() {
+            const dateElement = document.getElementById('scheduleDate');
+            
+            try {
+                // Load the sheet data to get the custom date from F2
+                const csvUrl = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`;
+                const response = await fetch(csvUrl);
+                const csvText = await response.text();
+                const lines = csvText.split('\n').filter(line => line.trim());
+                
+                if (lines.length >= 2) {
+                    // Get row 2 (index 1) and column F (index 5)
+                    const secondRow = parseCSVLine(lines[1]);
+                    const customDate = secondRow[5] ? secondRow[5].replace(/"/g, '').trim() : 'Schedule Date';
+                    dateElement.textContent = customDate;
+                } else {
+                    dateElement.textContent = translations[currentLang].todayDate || 'Schedule Date';
+                }
+            } catch (error) {
+                console.error('Error loading custom date:', error);
+                dateElement.textContent = translations[currentLang].todayDate || 'Schedule Date';
+            }
+        }
+
+        // Load all data (schedule + info boxes)
+        async function loadAllData() {
+            await Promise.all([
+                loadSchedule(),
+                loadInfoBoxes()
+            ]);
+        }
+
+        // Load schedule from Google Sheets
+        async function loadSchedule() {
+            const contentDiv = document.getElementById('scheduleContent');
+            contentDiv.innerHTML = `<div class="loading">${translations[currentLang].loadingTimes}</div>`;
+
+            try {
+                const csvUrl = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`;
+                
+                const response = await fetch(csvUrl);
+                if (!response.ok) {
+                    throw new Error('Failed to load schedule');
+                }
+
+                const csvText = await response.text();
+                const scheduleData = parseCSV(csvText);
+                
+                if (scheduleData.length === 0) {
+                    contentDiv.innerHTML = `
+                        <div class="empty-schedule">
+                            <h2>${translations[currentLang].noMoviesScheduled}</h2>
+                            <p>${translations[currentLang].noMoviesScheduledText}</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                displaySchedule(scheduleData);
+            } catch (error) {
+                console.error('Error loading schedule:', error);
+                contentDiv.innerHTML = `
+                    <div class="error">
+                        <h2>${translations[currentLang].unableToLoadSchedule}</h2>
+                        <p>${translations[currentLang].unableToLoadScheduleText}</p>
+                        <p style="font-size: 0.9em; margin-top: 10px;">Error: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Load information boxes from Google Sheets
+        async function loadInfoBoxes() {
+            const contentDiv = document.getElementById('infoContent');
+            contentDiv.innerHTML = `<div class="loading">${translations[currentLang].loadingInfo}</div>`;
+
+            try {
+                const csvUrl = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`;
+                
+                const response = await fetch(csvUrl);
+                if (!response.ok) {
+                    throw new Error('Failed to load information');
+                }
+
+                const csvText = await response.text();
+                const infoData = parseInfoBoxes(csvText);
+                
+                if (infoData.length === 0) {
+                    contentDiv.innerHTML = `
+                        <div class="info-box">
+                            <h3>${translations[currentLang].noInformationAvailable}</h3>
+                            <p>Add information to columns H, I, J in your Google Sheet.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                displayInfoBoxes(infoData);
+            } catch (error) {
+                console.error('Error loading info boxes:', error);
+                contentDiv.innerHTML = `
+                    <div class="info-box">
+                        <h3>Error Loading Information</h3>
+                        <p>Please check that the Google Sheet is publicly accessible.</p>
+                        <p style="font-size: 0.9em; margin-top: 10px;">Error: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Parse CSV data for schedule
+        function parseCSV(csvText) {
+            const lines = csvText.split('\n').filter(line => line.trim());
+            if (lines.length <= 1) return [];
+
+            const schedule = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = parseCSVLine(lines[i]);
+                if (values.length >= 2 && values[0] && values[1]) {
+                    schedule.push({
+                        time: values[0].replace(/"/g, '').trim(),
+                        title: values[1].replace(/"/g, '').trim(),
+                        duration: values[2] ? values[2].replace(/"/g, '').trim() : '',
+                        location: values[3] ? values[3].replace(/"/g, '').trim() : ''
+                    });
+                }
+            }
+            return schedule;
+        }
+
+        // Parse information boxes from CSV (columns H, I, J)
+        function parseInfoBoxes(csvText) {
+            const lines = csvText.split('\n').filter(line => line.trim());
+            if (lines.length <= 1) return [];
+
+            const infoBoxes = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = parseCSVLine(lines[i]);
+                if (values.length >= 8) { // Make sure we have at least 8 columns
+                    const hasContent = values[7] || values[8] || values[9]; // H, I, J columns
+                    if (hasContent) {
+                        infoBoxes.push({
+                            h3: values[7] ? values[7].replace(/"/g, '').trim() : '',
+                            h4: values[8] ? values[8].replace(/"/g, '').trim() : '',
+                            h5: values[9] ? values[9].replace(/"/g, '').trim() : ''
+                        });
+                    }
+                }
+            }
+            return infoBoxes;
+        }
+
+        // Parse a single CSV line
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+
+            result.push(current.trim());
+            return result;
+        }
+
+        // Display schedule
+        function displaySchedule(scheduleData) {
+            const contentDiv = document.getElementById('scheduleContent');
+            
+            const html = scheduleData.map(item => `
+                <div class="schedule-item">
+                    <div class="schedule-time">${item.time}</div>
+                    <div class="schedule-details">
+                        <div class="schedule-movie-title">${item.title}</div>
+                        <div class="schedule-info">
+                            ${item.duration ? `<div class="schedule-info-item">⏱️ ${item.duration}</div>` : ''}
+                            ${item.location ? `<div class="schedule-location">${item.location}</div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            contentDiv.innerHTML = `<div class="schedule-timeline">${html}</div>`;
+        }
+
+        // Display information boxes
+        function displayInfoBoxes(infoData) {
+            const contentDiv = document.getElementById('infoContent');
+            
+            const html = infoData.map(item => {
+                let boxContent = '';
+                if (item.h3) boxContent += `<h3>${item.h3}</h3>`;
+                if (item.h4) boxContent += `<h4>${item.h4}</h4>`;
+                if (item.h5) boxContent += `<h5>${item.h5}</h5>`;
+                
+                return `<div class="info-box">${boxContent}</div>`;
+            }).join('');
+
+            contentDiv.innerHTML = html || `
+                <div class="info-box">
+                    <h3>${translations[currentLang].noInformationAvailable}</h3>
+                    <p>Add information to columns H, I, J in your Google Sheet.</p>
+                </div>
+            `;
+        }
+
+        // Start auto-refresh
+        function startAutoRefresh() {
+            autoRefreshInterval = setInterval(() => {
+                loadAllData();
+            }, 30000); // Refresh every 30 seconds
+        }
+
+        // Stop auto-refresh
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+        }
+    </script>
+</body>
+</html>
