@@ -399,7 +399,7 @@ function displaySearchResults(results) {
     resultsContainer.innerHTML = results.map(movie => {
         const posterPath = movie.poster_path 
             ? `${TMDB_IMAGE_BASE}${movie.poster_path}`
-            : 'https://via.placeholder.com/50x75?text=No+Image';
+            : 'logo transparent.png';
         
         const year = movie.release_date ? new Date(movie.release_date).getFullYear() : 'N/A';
         
