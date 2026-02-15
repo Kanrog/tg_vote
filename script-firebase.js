@@ -140,7 +140,7 @@ const firebaseConfig = {
 
 // Get config from external file
 let TMDB_API_KEY = 'e0a68a345f803f46dbe83dc972acac76';
-let DEFAULT_ADMIN_PASSWORD = '1234qwer';
+let DEFAULT_ADMIN_PASSWORD = '1234qwerb049d522e642a230f12e3e5e95f46b0d667646561fbf2d627eea06fa2b385d3f';
 
 // State Management
 let movies = [];
@@ -571,10 +571,19 @@ function renderMovies() {
 }
 
 // Admin login
-function handleAdminLogin() {
+// Admin login
+async function handleAdminLogin() {
     const password = document.getElementById('adminPassword').value;
     
-    if (password === adminPassword) {
+    // Hash the entered password
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashedPassword = Array.from(new Uint8Array(hashBuffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+    
+    if (hashedPassword === adminPassword) {
         isAdminLoggedIn = true;
         document.getElementById('adminLogin').style.display = 'none';
         document.getElementById('adminPanel').style.display = 'block';
@@ -855,7 +864,7 @@ async function exportToGoogleSheets() {
 }
 
 // Change admin password
-function changePassword() {
+async function changePassword() {
     const newPassword = document.getElementById('newPassword').value;
     
     if (!newPassword || newPassword.length < 4) {
@@ -863,7 +872,14 @@ function changePassword() {
         return;
     }
     
-    adminPassword = newPassword;
+    // Hash the new password
+    const encoder = new TextEncoder();
+    const data = encoder.encode(newPassword);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    adminPassword = Array.from(new Uint8Array(hashBuffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+    
     saveAdminPassword();
     document.getElementById('newPassword').value = '';
     document.getElementById('changePasswordSection').style.display = 'none';
