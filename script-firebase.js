@@ -129,7 +129,7 @@ const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
 
 // Firebase Configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyAcDy87-Xy7xUS6LrIUjC6Nq5UONNQNYLs",
+  apiKey: "AIzaSyAQosl9mQ3QjXzNUayNBaiYYbuMOx8R0Rc",
   authDomain: "tg-movie.firebaseapp.com",
   projectId: "tg-movie",
   storageBucket: "tg-movie.firebasestorage.app",
