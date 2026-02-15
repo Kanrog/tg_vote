@@ -140,7 +140,7 @@ const firebaseConfig = {
 
 // Get config from external file
 let TMDB_API_KEY = 'e0a68a345f803f46dbe83dc972acac76';
-let DEFAULT_ADMIN_PASSWORD = '1234qwerb049d522e642a230f12e3e5e95f46b0d667646561fbf2d627eea06fa2b385d3f';
+let DEFAULT_ADMIN_PASSWORD = '2f7e49d7dec683d0a6713da95cd21c9d62fa03043c440ace0232c266bf2d8f05';
 
 // State Management
 let movies = [];
