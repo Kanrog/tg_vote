@@ -456,7 +456,7 @@ async function addMovie(movieId) {
             overview: movieData.overview || 'No overview available.',
             posterPath: movieData.poster_path 
                 ? `${TMDB_IMAGE_BASE}${movieData.poster_path}`
-                : 'https://via.placeholder.com/300x450?text=No+Poster',
+                : 'logo transparent.png',
             rating: movieData.vote_average ? movieData.vote_average.toFixed(1) : 'N/A',
             runtime: movieData.runtime || null,
             votes: 0,
