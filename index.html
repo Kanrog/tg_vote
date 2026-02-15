@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="styles.css">
     <style>
         .event-logo {
-            max-height: 100px;
+            max-height: 200px;
             margin: 15px 0;
         }
         
@@ -27,7 +27,6 @@
             transform: translateY(-2px);
         }
     </style>
-<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
 </head>
 <body>
     <div class="container">
@@ -36,13 +35,16 @@
                 <button class="lang-btn active" data-lang="no">🇳🇴 NO</button>
                 <button class="lang-btn" data-lang="en">🇬🇧 EN</button>
             </div>
-            <h1 data-i18n="title">🎬 TG26 Frivilligpleie Kino</h1>
-            <img src="TGlogo-300x300.png" alt="TG-Logo" class="event-logo">
+            <img src="logo transparent.png" alt="TG-Logo" class="event-logo">
+            <h1 data-i18n="title">🎬 Arena:Frivilligpleie Kino</h1>
             <p class="subtitle" data-i18n="voteSubtitle">Stem på hvilken film du vil se!</p>
             <a href="schedule.html" class="schedule-link">
                 <span data-i18n="scheduleLink">📅 Vis Kinotider</span>
             </a>
             <p class="subtitle" data-i18n="updateInfo">Oppdateres hver dag, ca klokken 22:00</p>
+                <div style="text-align: center; margin: 40px 0;">
+            <p class="subtitle" data-i18n="moderationNotice">Vi reserverer oss retten til å moderere listen etter behov.</p>
+        </div>
         </header>
 
         <div class="search-section">
@@ -62,11 +64,7 @@
                 <p class="empty-state">Ingen filmer lagt til enda, søk etter den filmen du vil se over!</p>
             </div>
         </div>
-        
-        <div style="text-align: center; margin: 40px 0;">
-            <p class="subtitle" data-i18n="moderationNotice">Vi reserverer oss retten til å moderere listen etter behov.</p>
-        </div>
-        
+              
 <footer>
     <button id="adminBtn" class="admin-btn" data-i18n="adminPanel">Admin Panel</button>
     <p>Powered by <a href="https://www.themoviedb.org" target="_blank">TMDB</a></p>
